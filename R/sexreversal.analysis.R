@@ -39,71 +39,71 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
 ##############
 ## Model 1
 ##############
-suppressMessages(
-    Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, thin = 1))
-  	Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
-saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
-summary(Bas_m1_brms)
+    suppressMessages(
+        Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+                       family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4))
+      	Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
+    saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
+    summary(Bas_m1_brms)
 
-# extract posteriors
-post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
-b_XX_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXX_Male:zlogMass"]
-b_XY_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXY_Male:zlogMass"]
+    # extract posteriors
+    post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
+    b_XX_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXX_Male:zlogMass"]
+    b_XY_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXY_Male:zlogMass"]
 
-# contarst slopes
-contrastSlope <- as.mcmc(post_meanXX_male_slope - post_meanXY_male_slope)
-mean(contrastSlope)
-HPDinterval(contrastSlope)
+    # contarst slopes
+    contrastSlope <- as.mcmc(post_meanXX_male_slope - post_meanXY_male_slope)
+    mean(contrastSlope)
+    HPDinterval(contrastSlope)
 
-#R2 of full model
-bayes_R2(post_Bas_m1)
+    #R2 of full model
+    bayes_R2(post_Bas_m1)
 
-## Predictions
-   newdata <- data.frame(
-     sex = "XX_Female",
-     zlogMass = seq(-0.4, 0.4, length.out = 100),
-     ztime = 0)
-   
-   prXX_female <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
-    
-   prXX_female %>%  ggplot() + geom_smooth(aes(x = zlogMass, y = Estimate))
-  
-# Model checks
-plot(post_Bas_m1)
+    ## Predictions
+       newdata <- data.frame(
+         sex = "XX_Female",
+         zlogMass = seq(-0.4, 0.4, length.out = 100),
+         ztime = 0)
+       
+       prXX_female <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
+        
+       prXX_female %>%  ggplot() + geom_smooth(aes(x = zlogMass, y = Estimate))
+      
+    # Model checks
+    plot(post_Bas_m1)
 
 ##############
 ## Model 2
 ##############
-mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-          sigma ~ zlogMass + ztime)
-Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1)
-Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
-saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
-bayes_R2(Bas_m2_brms)
+    mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+              sigma ~ zlogMass + ztime)
+    Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
+    Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
+    saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
+    bayes_R2(Bas_m2_brms)
 
-# Model checks
-plot(Bas_m2_brms)
-summary(Bas_m2_brms)
+    # Model checks
+    plot(Bas_m2_brms)
+    summary(Bas_m2_brms)
 
 
 ####################
 # Model comparison
 ####################
-loo_compare(Bas_m1_brms, Bas_m2_brms)
+    loo_compare(Bas_m1_brms, Bas_m2_brms)
 
 
 ####################
 # Plots
 ####################
-# Regression Plot accounting for log metabolic rate and log mass across sex
-ggplot(bassiana.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=sex)) +
-  geom_smooth(method="lm") +
-  geom_point(size=3, alpha = 0.2) +
-  theme_bw() + 
-  xlab("Log Mass") +
-  ylab("Log Metabolic Rate") +
-  ggtitle("Bassiana MR") 
+    # Regression Plot accounting for log metabolic rate and log mass across sex
+    ggplot(bassiana.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=sex)) +
+      geom_smooth(method="lm") +
+      geom_point(size=3, alpha = 0.2) +
+      theme_bw() + 
+      xlab("Log Mass") +
+      ylab("Log Metabolic Rate") +
+      ggtitle("Bassiana MR") 
 
 
 ####################################
@@ -112,35 +112,35 @@ ggplot(bassiana.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=
 #########
 #Load data
 ########
-pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
-  rename(day =date.dd.mm.yy.,
-         time = marker_sample,
-         id = bd_liz_id, 
-         O2_min = Final_MR_O2_min, 
-         bmr_O2 = BMR_O2,
-         sex = Geno.pheno,
-         mass_g = mass) %>% 
-  mutate(ztime = scale(time),
-         zlogMass = scale(log(mass_g), scale = FALSE)) %>% 
-  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
+    pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+      rename(day =date.dd.mm.yy.,
+             time = marker_sample,
+             id = bd_liz_id, 
+             O2_min = Final_MR_O2_min, 
+             bmr_O2 = BMR_O2,
+             sex = Geno.pheno,
+             mass_g = mass) %>% 
+      mutate(ztime = scale(time),
+             zlogMass = scale(log(mass_g), scale = FALSE)) %>% 
+      dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
-# quick plot
-# box/violin plot
-fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) + 
-  geom_point() +
-  geom_violin() + 
-  geom_boxplot(width=0.1, color="red", alpha=0.2) + 
-  geom_jitter(fill = "grey", alpha = 0.3) + 
-  labs(y = TeX("Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
-  theme_bw()
-fig
+    # quick plot
+    # box/violin plot
+    fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) + 
+      geom_point() +
+      geom_violin() + 
+      geom_boxplot(width=0.1, color="red", alpha=0.2) + 
+      geom_jitter(fill = "grey", alpha = 0.3) + 
+      labs(y = TeX("Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
+      theme_bw()
+    fig
 
 ##############
 ## Model 1
 ##############
 Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
-Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"))
+                   family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
+Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"), moment_match = TRUE)
 saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 summary(Pog_m1_brms)
 bayes_R2(Pog_m1_brms)
@@ -150,8 +150,8 @@ bayes_R2(Pog_m1_brms)
 ##############
         mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
                         sigma ~ zlogMass + ztime)
-Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
-Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"))
+Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4, save_all_pars = TRUE)
+Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE, reloo = TRUE)
 saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
 bayes_R2(Pog_m2_brms)
 
