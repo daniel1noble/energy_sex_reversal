@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", tidybayes)
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -99,7 +99,7 @@ loo_compare(Bas_m1_brms, Bas_m2_brms)
 # Regression Plot accounting for log metabolic rate and log mass across sex
 ggplot(bassiana.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=sex)) +
   geom_smooth(method="lm") +
-  geom_point(size=3) +
+  geom_point(size=3, alpha = 0.2) +
   theme_bw() + 
   xlab("Log Mass") +
   ylab("Log Metabolic Rate") +
