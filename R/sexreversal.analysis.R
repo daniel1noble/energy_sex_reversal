@@ -3,8 +3,7 @@
 ################################################### 
 
 # Packages
-packages<-c("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp")
-sapply(packages, require, character.only=T)
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp")
 
 ######### Bassiana  O2 data ######### 
 # Load data and rename cols to make easy to follow
@@ -20,18 +19,18 @@ bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.an
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 # quick plot
 # box/violin plot
-	fig <- ggplot(bassiana.data, aes(x = sex, y = O2_min)) + 
+	fig <- ggplot(bassiana.data, aes(x = sex, y = log(O2_min))) + 
 	  geom_point() +
 	  geom_violin() + 
 	  geom_boxplot(width=0.1, color="red", alpha=0.2) + 
 	  geom_jitter(fill = "grey", alpha = 0.3) + 
-	  labs(y = TeX("Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
+	  labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
 	  theme_bw()
 	fig
 # Model 1
 # comparing o2 measurements across sex for bassiana
 # accounting for random factor of lizard, sex day and time (maker_sample)
-Bas_m1_lmer <- lmer(log(O2_min) ~ sex + scale(time) + (1 + ztime | id) + (1 | day), data = bassiana.data)
+Bas_m1_lmer <- lmer(log(O2_min) ~ sex + ztime + (1 + ztime | id) + (1 | day), data = bassiana.data)
 summary(Bas_m1_lmer)
 anova(Bas_m1_lmer )
 AIC(Bas_m1_lmer )
@@ -40,8 +39,30 @@ anova(Bas_m1_lmer)
 hist(residuals(Bas_m1_lmer))
 plot(residuals(Bas_m1_lmer))
 
+
+### brms, 
+Bas_m1_brms <- brm(log(O2_min) ~ sex + ztime + (1 + ztime | id) + (1 | day),  family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta = 0.95))
+saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
+plot(Bas_m1_brms)
+summary(Bas_m1_brms)
+
+# extract posteriors
+post <- posterior_samples(Bas_m1_brms, pars = "^b")
+post_meanXX_male <- post[,"b_Intercept"] + post[,"b_sexXX_Male"]
+post_meanXY_male <- post[,"b_Intercept"] + post[,"b_sexXY_Male"]
+
+contrastXX_XY = post_meanXX_male - post_meanXY_male
+p_value <- 1 - ((table(contrastXX_XY <0))[2] / length(contrastXX_XY))
+
+
+## Model 2
+Bas_m2_brms <- brm(log(O2_min) ~ sex*scale(log(mass_g), scale = FALSE) + ztime + (1 + ztime | id) + (1 | day),  family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta = 0.95))
+plot(Bas_m2_brms)
+summary(Bas_m2_brms)
+
+
 ######### full data
-Bas_all_model1 <- lmer(log(O2_min) ~ sex*log(mass_g) + ztime + log(mass_g) + (1 + ztime | id) + (1 | day), data = bassiana.data)
+Bas_all_model1 <- lmer(log(O2_min) ~ sex*scale(log(mass_g), scale = FALSE) + ztime + (1 + ztime | id) + (1 | day))
 summary(Bas_all_model1)
 lsmeans(Bas_all_model1, pairwise ~ sex)
 # Regression Plot accounting for log metabolic rate and log mass across sex
