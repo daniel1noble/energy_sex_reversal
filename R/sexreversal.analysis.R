@@ -36,12 +36,12 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
 #####################################
 # Bassiana Models - Full Data
 #####################################
-########
+##############
 ## Model 1
-########
+##############
 suppressMessages(
     Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta = 0.95)))
+                   family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, thin = 1))
   	Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
 saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
 summary(Bas_m1_brms)
@@ -59,14 +59,21 @@ HPDinterval(contrastSlope)
 #R2 of full model
 bayes_R2(post_Bas_m1)
 
-# Conditional effects
-conditional_effects(post_Bas_m1)
-
+## Predictions
+   newdata <- data.frame(
+     sex = "XX_Female",
+     zlogMass = seq(-0.4, 0.4, length.out = 100),
+     ztime = 0)
+   
+   prXX_female <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
+    
+   prXX_female %>%  ggplot() + geom_smooth(aes(x = zlogMass, y = Estimate))
+  
 # Model checks
 plot(post_Bas_m1)
 
 ##############
-# Model 2
+## Model 2
 ##############
 mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
           sigma ~ zlogMass + ztime)
@@ -98,11 +105,13 @@ ggplot(bassiana.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=
   ylab("Log Metabolic Rate") +
   ggtitle("Bassiana MR") 
 
+
 ####################################
 ######### Pogona  O2 data  ######### 
 ####################################
-
-# Load data and rename cols to make easy to follow
+#########
+#Load data
+########
 pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
          time = marker_sample,
@@ -126,32 +135,26 @@ fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) +
   theme_bw()
 fig
 
-# Model 1
-# comparing o2 measurements across sex for Pogona
-# accounting for random factor of lizard, sex day and time (maker_sample)
-Pog_m1_brms <- brm(log(O2_min) ~ sex + ztime + (1 + ztime | id) + (1 | day),  
+##############
+## Model 1
+##############
+Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
                    family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
 Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"))
 saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 summary(Pog_m1_brms)
+bayes_R2(Pog_m1_brms)
 
-# Model 2
-Pog_m2_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
-Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"))
-saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
-summary(Pog_m2_brms)
-bayes_R2(Pog_m2_brms)
-
-# Model 3
+##############
+## Model 2
+##############
         mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
                         sigma ~ zlogMass + ztime)
-Pog_m3_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
-Pog_m3_brms <- add_criterion(Pog_m3_brms, c("loo", "waic"))
-saveRDS(Pog_m3_brms, "./models/Pog_m3_brms")
-bayes_R2(Pog_m3_brms)
+Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1)
+Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"))
+saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
+bayes_R2(Pog_m2_brms)
 
-loo_compare(Pog_m2_brms,Pog_m3_brms)
 ## Posteriors
 post_Pog_m2_brms <- posterior_samples(Pog_m2_brms, "^b")
 
@@ -163,7 +166,14 @@ contrast_ZZ <- as.mcmc(b_sexZZf - b_sexZZm)
 mean(contrast_ZZ)
 HPDinterval(contrast_ZZ)
 
+####################
+# Model comparison
+####################
+loo_compare(Pog_m2_brms,Pog_m1_brms)
 
+####################
+# Plots
+####################
 # Regression Plot accounting for log metabolic rate and log mass across sex
 ggplot(pogona.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=sex)) +
   geom_smooth(method="lm") +
