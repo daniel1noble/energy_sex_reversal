@@ -1,7 +1,7 @@
 ################################################### 
 # Analysis of sexreversal status bassiana experiment
 ################################################### 
-setwd("~/OneDrive - Australian National University/Respirometry")
+
 # Packages
 packages<-c("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp")
 sapply(packages, require, character.only=T)
