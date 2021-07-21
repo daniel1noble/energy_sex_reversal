@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", tidybayes)
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -57,7 +57,7 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
     HPDinterval(contrastSlope)
 
     #R2 of full model
-    bayes_R2(post_Bas_m1)
+    bayes_R2(Bas_m1_brms)
 
     # Model checks
     plot(post_Bas_m1)
@@ -70,30 +70,85 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
     Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
     Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
     saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
-    bayes_R2(Bas_m2_brms)
+    
+    # read file in
+    Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
 
     # Model checks
     plot(Bas_m2_brms)
     summary(Bas_m2_brms)
+    #R2 of full model
+    bayes_R2(Bas_m2_brms)
 
+# prediction of overall model using spread draws
+Bas_m2_brms %>%
+      spread_draws(b_Intercept, b_zlogMass) %>%
+      mutate(zlogmass = list(seq(-0.4, 0.4, length.out = 100))) %>% #the observed value range of zlogmass
+      unnest(zlogmass) %>%
+      mutate(pred = exp(b_zlogMass + b_zlogMass*zlogmass)/(1+exp(b_zlogMass + b_zlogMass*zlogmass))) %>%
+      group_by(zlogmass) %>%
+      summarise(pred_m = mean(pred, na.rm = TRUE),
+                pred_low = quantile(pred, prob = 0.025),
+                pred_high = quantile(pred, prob = 0.975)) %>%
+      ggplot(aes(x = zlogmass, y = pred_m)) +
+      geom_line() +
+      geom_ribbon(aes(ymin = pred_low, ymax = pred_high), alpha=0.2)
+ggsave(filename ="figures/bassiana.mod2.predicition.pdf",  height = 5, width = 7)
 
 ####################
 # Model comparison
 ####################
     loo_compare(Bas_m1_brms, Bas_m2_brms)
+    
+####################  
+# extract posteriors for best model + Plotting 
+####################
+post_Bas_m2 <- posterior_samples(Bas_m2_brms, pars = "^b")
+dimnames(post_Bas_m2)
+
+# extracting posteriors 
+####### CHECK XX FEMALE
+    b_XXmale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXX_Male:zlogMass"])
+    b_XYmale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXY_Male:zlogMass"])
+    b_XXfemale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sigma_zlogMass"])
+    bass.dat <- cbind(b_XXfemale, b_XXmale, b_XYmale )
+    
+    # plotting posteriors lot
+    color_scheme_set("blue")
+    mcmc_intervals(bass.dat, 
+                   pars = c("b_XXfemale", "b_XXmale", "b_XYmale"), 
+                   prob = 0.95, 
+                   prob_outer = 0.99, 
+                   point_est = "mean")
+    
+    mcmc_areas(bass.dat, 
+               pars = c("b_XXfemale", "b_XYmale", "b_XXmale"),
+               prob = 0.95, 
+               prob_outer = 0.99, 
+               point_est = "mean")
+    ggsave(filename ="figures/bassiana.posterior.pdf",  height = 5, width = 7)
+    
+    # contrast phenotype slopes
+    bass.phenotype <- as.mcmc(b_XXmale - b_XYmale)
+    mean(bass.phenotype)
+    HPDinterval(bass.phenotype)
+    
+    # contrast genotype slopes 
+    bass.genotype <- as.mcmc(b_XXfemale - b_XXmale)
+    mean(bass.genotype)
+    HPDinterval(bass.genotype)
 
 ####################
 # Predictions from best model for plots
 ####################
-Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
     #XY female
     newdata <- data.frame(
       sex = "XX_Female",
       zlogMass = seq(-0.4, 0.4, length.out = 100),
       ztime = 0)
-    prXY_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
+    prXX_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXX_female <- prXX_female %>% 
-      mutate(sex = "XX_female")
+      mutate(sex = "XX_Female")
     
     #XY male 
     newdata <- data.frame(
@@ -102,7 +157,7 @@ Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
       ztime = 0)
     prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXY_male <- prXY_male %>% 
-      mutate(sex = "XY_male")
+      mutate(sex = "XY_Male")
     
     #XX male
     newdata <- data.frame(
@@ -111,37 +166,36 @@ Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
       ztime = 0)
     prXX_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXX_male <- prXX_male %>% 
-      mutate(sex = "XX_male")
+      mutate(sex = "XX_Male")
     
     # setting up predicition data into one df 
-    mod.dat <- rbind(prXX_female, prXX_male, prXY_male) %>% 
-      group_by(sex)
-    # adding est error col
-    mod.dat$upper <- mod.dat$Estimate + mod.dat$Est.Error
-    mod.dat$lower <- mod.dat$Estimate - mod.dat$Est.Error    
+    bass.mod.dat <- rbind(prXX_female, prXX_male, prXY_male) %>% 
+      group_by(sex) %>% 
+      mutate(sd = sd(Estimate),
+             se= sd/sqrt(n()))
+    # adding est error col with se
+    bass.mod.dat$upper <- bass.mod.dat$Estimate + bass.mod.dat$se
+    bass.mod.dat$lower <- bass.mod.dat$Estimate - bass.mod.dat$se    
     
     
     
 ####################
 # Plots
 ####################
-    # ORDER: xxfemale, xxmale (SR), xymale
-    mycolors <- c("#333333", "#990000", "#3399FF", "#333333", "#990000", "#3399FF")
-    
-    ### plot from predictions
-     ggplot(data = bassiana.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
-        geom_point()  +
-        geom_rug(sides = "b", size = 1) +
-        geom_ribbon(data = mod.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
-        geom_smooth(data = mod.dat, aes(y = Estimate), size = 1) +
-        scale_color_manual(values = mycolors, guide = FALSE) + 
-        scale_fill_manual(values = mycolors, guide = FALSE) +
-        theme_bw() +
-        theme(axis.text = element_text(size=12)) +
+    # 1st ORDER: XYM
+    mycolors <- c("#333333", "#990000", "#3399FF")
+    ggplot(data = bassiana.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
+      geom_point(alpha = .6) +
+      geom_line(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
+      geom_ribbon(data = bass.mod.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
+      scale_fill_manual(values = mycolors, guide = FALSE) +
+      scale_color_manual(values = mycolors, guide = FALSE) +
+      theme_bw() +
+      theme(axis.text = element_text(size=12)) +
         theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
         labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
       ### save plot ##
-     ggsave(filename = "bassiana.pdf",  height = 5, width = 7)
+     ggsave(filename ="figures/bassiana.regression.pdf",  height = 5, width = 7)
       
       
     # Regression Plot accounting for log metabolic rate and log mass across sex
@@ -163,6 +217,10 @@ Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
       geom_point(data = bassiana.data) +
       scale_fill_brewer(palette = "Greys") +
       scale_color_brewer(palette = "Set2")
+    dimnames(post_Bas_m2)
+    
+    
+    
     
 ####################################
 ######### Pogona  O2 data  ######### 
@@ -178,6 +236,7 @@ Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
              bmr_O2 = BMR_O2,
              sex = Geno.pheno,
              mass_g = mass) %>% 
+      group_by(sex) %>% 
       mutate(ztime = scale(time),
              zlogMass = scale(log(mass_g), scale = FALSE)) %>% 
       dplyr::select(-X, -Date.Hatched, -MR_O2_min)
@@ -211,29 +270,82 @@ bayes_R2(Pog_m1_brms)
 Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4, save_all_pars = TRUE)
 Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE, reloo = TRUE)
 saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
+
+# import file
+Pog_m2_brms <- readRDS(file="models/Pog_m2_brms")
+summary(Pog_m2_brms)
+
+# Model checks
+plot(Pog_m2_brms)
+summary(Pog_m2_brms)
+#R2 of full model
 bayes_R2(Pog_m2_brms)
 
-## Posteriors
-post_Pog_m2_brms <- posterior_samples(Pog_m2_brms, "^b")
+# Prediction of model2 
+Pog_m2_brms %>%
+  spread_draws(b_Intercept, b_zlogMass) %>%
+  mutate(zlogmass = list(seq(-0.4, 0.4, length.out = 100))) %>% #the observed value range of zlogmass
+  unnest(zlogmass) %>%
+  mutate(pred = exp(b_zlogMass + b_zlogMass*zlogmass)/(1+exp(b_zlogMass + b_zlogMass*zlogmass))) %>%
+  group_by(zlogmass) %>%
+  summarise(pred_m = mean(pred, na.rm = TRUE),
+            pred_low = quantile(pred, prob = 0.025),
+            pred_high = quantile(pred, prob = 0.975)) %>%
+  ggplot(aes(x = zlogmass, y = pred_m)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = pred_low, ymax = pred_high), alpha=0.2)
+ggsave(filename ="figures/pogona.mod2.predicition.pdf",  height = 5, width = 7)
 
-# Slope contrast
-b_sexZZf <- post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZf:zlogMass"]
-b_sexZZm <- post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZm:zlogMass"]
-
-contrast_ZZ <- as.mcmc(b_sexZZf - b_sexZZm)
-mean(contrast_ZZ)
-HPDinterval(contrast_ZZ)
 
 ####################
 # Model comparison
 ####################
 loo_compare(Pog_m2_brms,Pog_m1_brms)
 
+####################  
+# extract posteriors for best model + Plotting
+####################
+post_Pog_m2_brms <- posterior_samples(Pog_m2_brms, "^b")
+dimnames(post_Pog_m2_brms)
+
+# Slope contrast
+######### CHECK ZWF slope!!!!
+b_ZZf <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZf:zlogMass"])
+b_ZZm <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZm:zlogMass"])
+b_ZWf <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sigma_zlogMass"])
+pog.dat <- cbind(b_ZZf, b_ZZm, b_ZWf)
+
+# plot
+color_scheme_set("blue")
+mcmc_intervals(pog.dat, 
+               pars = c("b_ZWf", "b_ZZm", "b_ZZf"),
+               prob = 0.95, 
+               prob_outer = 0.99, 
+               point_est = "mean")
+
+mcmc_areas(
+  pog.dat, 
+  pars = c("b_ZWf", "b_ZZm", "b_ZZf"),
+  prob = 0.95, 
+  prob_outer = 0.99, 
+  point_est = "mean")
+ggsave(filename ="figures/pogona.posterior.pdf",  height = 5, width = 7)
+
+# slope contrast genotype
+contrast_ZZ <- as.mcmc(b_ZZf - b_ZZm)
+mean(contrast_ZZ)
+HPDinterval(contrast_ZZ)
+# slope contrast phenotype
+contrast_ZWf_ZZf <- as.mcmc(b_ZWf - b_ZZf)
+mean(contrast_ZWf_ZZf)
+HPDinterval(contrast_ZWf_ZZf)
+
+
 
 ####################
 # Predictions from best model for plots
 ####################
-Pog_m2_brms <- readRDS(file="models/Pog_m2_brms")
+
 #ZW female
 newdata <- data.frame(
   sex = "ZWf",
@@ -261,23 +373,43 @@ prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = N
 prZZf <- prZZf %>% 
   mutate(sex = "ZZf")
 
-# setting up predicition data into one df 
+# setting up prediction data into one df and calculating SE
 mod.pog.dat <- rbind(prZWf, prZZm, prZZf) %>% 
-  group_by(sex)
+  group_by(sex) %>% 
+  mutate(sd = sd(Estimate),
+       se= sd/sqrt(n()))
+
 # adding est error col
-mod.pog.dat$upper <- mod.pog.dat$Estimate + mod.pog.dat$Est.Error
-mod.pog.dat$lower <- mod.pog.dat$Estimate - mod.pog.dat$Est.Error  
+mod.pog.dat$upper <- mod.pog.dat$Estimate + mod.pog.dat$se
+mod.pog.dat$lower <- mod.pog.dat$Estimate - mod.pog.dat$se  
 
 
 ####################
 # Plots
 ####################
+mycolors <- c("#333333", "#990000", "#3399FF")
+ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
+  geom_point(alpha = .6) +
+  geom_line(data = mod.pog.dat, aes(x=zlogMass, y=Estimate))+
+  geom_ribbon(data = mod.pog.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
+  scale_fill_manual(values = mycolors, guide = FALSE) +
+  scale_color_manual(values = mycolors, guide = FALSE) +
+  theme_bw() +
+  theme(axis.text = element_text(size=12)) +
+  theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
+  labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
+### save plot ##
+ggsave(filename ="figures/bassiana.regression.pdf",  height = 5, width = 7)
+
+
+
+
 # ORDER: ZWf, ZZm, ZZf(SR)
 mycolors <- c("#333333", "#3399FF", "#990000", "#333333", "#3399FF", "#990000")
 
 ### plot from predictions
 ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
-  geom_point()  +
+  geom_point(alpha = .6)  +
   geom_rug(sides = "b", size = 1) +
   geom_ribbon(data = mod.pog.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
   geom_smooth(data = mod.pog.dat, aes(y = Estimate), size = 1) +
@@ -287,18 +419,11 @@ ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) 
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
 labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
+
 ### save plot ##
-ggsave(filename = "pogona.pdf", height = 5, width = 7)
+ggsave("figures/pogona.regression.pdf", height = 5, width = 7)
 
 
-# Regression Plot accounting for log metabolic rate and log mass across sex
-ggplot(pogona.data, aes(log(mass_g), log(O2_min), shape=sex, colour=sex, fill=sex)) +
-  geom_smooth(method="lm") +
-  geom_point(size=3) +
-  theme_bw() + 
-  xlab("Log Mass") +
-  ylab("Log Metabolic Rate") +
-  ggtitle("Pogona") 
 
 
 
