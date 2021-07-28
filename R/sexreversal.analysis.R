@@ -108,33 +108,39 @@ dimnames(post_Bas_m2)
 
 # extracting posteriors 
 ####### CHECK XX FEMALE
-    b_XXmale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXX_Male:zlogMass"])
-    b_XYmale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXY_Male:zlogMass"])
-    b_XXfemale <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sigma_zlogMass"])
-    bass.dat <- cbind(b_XXfemale, b_XXmale, b_XYmale )
-    
+    XXf <- as.array(post_Bas_m2[,"b_zlogMass"])
+    XXm <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXX_Male:zlogMass"])
+    XYm <- as.array(post_Bas_m2[,"b_zlogMass"] + post_Bas_m2[,"b_sexXY_Male:zlogMass"])
+   
+    bass.dat <- cbind(XXf, XXm, XYm )
+      
     # plotting posteriors lot
-    color_scheme_set("blue")
     mcmc_intervals(bass.dat, 
-                   pars = c("b_XXfemale", "b_XXmale", "b_XYmale"), 
+                   pars = c("XXf", "XXm", "XYm"), 
                    prob = 0.95, 
                    prob_outer = 0.99, 
-                   point_est = "mean")
-    
+                   point_est = "mean") 
     mcmc_areas(bass.dat, 
-               pars = c("b_XXfemale", "b_XYmale", "b_XXmale"),
+               pars = c("XXf", "XXm", "XYm"),
                prob = 0.95, 
                prob_outer = 0.99, 
-               point_est = "mean")
+               point_est = "mean")+
+      theme_bw() +
+      theme(axis.text = element_text(size=12)) +
+      theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
+            labs(y = TeX("Sex class"), x = "Slope") 
     ggsave(filename ="figures/bassiana.posterior.pdf",  height = 5, width = 7)
     
+      
+    
+    
     # contrast phenotype slopes
-    bass.phenotype <- as.mcmc(b_XXmale - b_XYmale)
+    bass.phenotype <- as.mcmc(XXm - XYm)
     mean(bass.phenotype)
     HPDinterval(bass.phenotype)
     
     # contrast genotype slopes 
-    bass.genotype <- as.mcmc(b_XXfemale - b_XXmale)
+    bass.genotype <- as.mcmc(XXf - XXm)
     mean(bass.genotype)
     HPDinterval(bass.genotype)
 
@@ -275,6 +281,7 @@ saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
 Pog_m2_brms <- readRDS(file="models/Pog_m2_brms")
 summary(Pog_m2_brms)
 
+
 # Model checks
 plot(Pog_m2_brms)
 summary(Pog_m2_brms)
@@ -310,33 +317,38 @@ dimnames(post_Pog_m2_brms)
 
 # Slope contrast
 ######### CHECK ZWF slope!!!!
-b_ZZf <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZf:zlogMass"])
-b_ZZm <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZm:zlogMass"])
-b_ZWf <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sigma_zlogMass"])
-pog.dat <- cbind(b_ZZf, b_ZZm, b_ZWf)
+ZZf <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZf:zlogMass"])
+ZZm <- as.array(post_Pog_m2_brms[,"b_zlogMass"] + post_Pog_m2_brms[,"b_sexZZm:zlogMass"])
+ZWf <- as.array(post_Pog_m2_brms[,"b_zlogMass"])
+pog.dat <- cbind(ZZf, ZZm, ZWf)
 
 # plot
-color_scheme_set("blue")
 mcmc_intervals(pog.dat, 
-               pars = c("b_ZWf", "b_ZZm", "b_ZZf"),
+               pars = c("ZWf", "ZZm", "ZZf"),
                prob = 0.95, 
                prob_outer = 0.99, 
                point_est = "mean")
 
 mcmc_areas(
   pog.dat, 
-  pars = c("b_ZWf", "b_ZZm", "b_ZZf"),
+  pars = c("ZWf", "ZZf", "ZZm"),
   prob = 0.95, 
   prob_outer = 0.99, 
-  point_est = "mean")
+  point_est = "mean")+ 
+  theme_bw() +
+  theme(axis.text = element_text(size=12)) +
+  theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
+  labs(y = TeX("Sex class"), x = "Slope") 
 ggsave(filename ="figures/pogona.posterior.pdf",  height = 5, width = 7)
 
-# slope contrast genotype
-contrast_ZZ <- as.mcmc(b_ZZf - b_ZZm)
+
+
+# slope contrast phenotype
+contrast_ZZ <- as.mcmc(ZZf - ZZm)
 mean(contrast_ZZ)
 HPDinterval(contrast_ZZ)
 # slope contrast phenotype
-contrast_ZWf_ZZf <- as.mcmc(b_ZWf - b_ZZf)
+contrast_ZWf_ZZf <- as.mcmc(ZWf - ZZf)
 mean(contrast_ZWf_ZZf)
 HPDinterval(contrast_ZWf_ZZf)
 
@@ -398,8 +410,7 @@ ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) 
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-### save plot ##
-ggsave(filename ="figures/bassiana.regression.pdf",  height = 5, width = 7)
+ggsave(filename ="figures/pogona.regression.pdf",  height = 5, width = 7)
 
 
 
