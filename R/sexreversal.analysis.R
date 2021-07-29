@@ -15,8 +15,7 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
     rename(day =date.dd.mm.yy.,
            time = marker_sample,
            id = bd_liz_id, 
-           O2_min = Final_MR_O2_min, 
-           bmr_O2 = BMR_O2,
+           O2_min = Final_MR_O2_min,
            sex = Geno.pheno,
            mass_g = mass) %>% 
     mutate(ztime = scale(time),
@@ -238,8 +237,7 @@ dimnames(post_Bas_m2)
       rename(day =date.dd.mm.yy.,
              time = marker_sample,
              id = bd_liz_id, 
-             O2_min = Final_MR_O2_min, 
-             bmr_O2 = BMR_O2,
+             O2_min = Final_MR_O2_min,
              sex = Geno.pheno,
              mass_g = mass) %>% 
       group_by(sex) %>% 
@@ -361,7 +359,7 @@ HPDinterval(contrast_ZWf_ZZf)
 #ZW female
 newdata <- data.frame(
   sex = "ZWf",
-  zlogMass = seq(-0.6, 1.3, length.out = 100),
+  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
   ztime = 0)
 prZWf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 prZWf <- prZWf %>% 
@@ -370,7 +368,7 @@ prZWf <- prZWf %>%
 #ZZ male 
 newdata <- data.frame(
   sex = "ZZm",
-  zlogMass = seq(-0.6, 1.3, length.out = 100),
+  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
   ztime = 0)
 prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 prZZm <- prZZm %>% 
@@ -379,7 +377,7 @@ prZZm <- prZZm %>%
 #ZZ female
 newdata <- data.frame(
   sex = "ZZf",
-  zlogMass = seq(-0.6, 1.3, length.out = 100),
+  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
   ztime = 0)
 prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 prZZf <- prZZf %>% 
@@ -411,30 +409,3 @@ ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) 
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
 ggsave(filename ="figures/pogona.regression.pdf",  height = 5, width = 7)
-
-
-
-
-# ORDER: ZWf, ZZm, ZZf(SR)
-mycolors <- c("#333333", "#3399FF", "#990000", "#333333", "#3399FF", "#990000")
-
-### plot from predictions
-ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
-  geom_point(alpha = .6)  +
-  geom_rug(sides = "b", size = 1) +
-  geom_ribbon(data = mod.pog.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
-  geom_smooth(data = mod.pog.dat, aes(y = Estimate), size = 1) +
-  scale_color_manual(values = mycolors, guide = FALSE) + 
-  scale_fill_manual(values = mycolors, guide = FALSE) +
-  theme_bw() +
-  theme(axis.text = element_text(size=12)) +
-  theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
-labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-
-### save plot ##
-ggsave("figures/pogona.regression.pdf", height = 5, width = 7)
-
-
-
-
-
