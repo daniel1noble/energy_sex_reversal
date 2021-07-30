@@ -277,7 +277,9 @@ bass.raw.summary <- bassiana.data %>%
              mass_g = mass) %>% 
       group_by(sex) %>% 
       mutate(ztime = scale(time),
-             zlogMass = scale(log(mass_g), scale = FALSE)) %>% 
+             zlogMass = scale(log(mass_g), scale = FALSE),
+             zstartmass = scale(log(start_mass_g), scale = FALSE),
+             zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
       dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
     # quick plot
@@ -443,13 +445,33 @@ mod.pog.dat$upper <- mod.pog.dat$Estimate + mod.pog.dat$se
 mod.pog.dat$lower <- mod.pog.dat$Estimate - mod.pog.dat$se  
 
 
+############## ############### ############## 
+#### df for summarizing raw datapoints #####
+############## ############### ############## 
+pogona.raw.summary <- pogona.data %>% 
+  group_by(day, id, sex) %>% 
+  summarise(MR = mean(log(O2_min)),
+            MR.se = std.error(log(O2_min)), 
+            zlogMass = mean(zlogMass),
+            zstartmass = mean(zstartmass), 
+            zendmass = mean(zendmass)) %>% 
+  mutate(a = ((zstartmass - zlogMass)^2),
+         b = ((zstartmass - zlogMass)^2), 
+         c = (a+b),
+         d = c/2,
+         sd = sqrt(d),
+         mass.se = sd/(sqrt(2)))
+
+
 ####################
 # Plots
 ####################
 mycolors <- c("#333333", "#990000", "#3399FF")
-ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
-  geom_point(alpha = .6) +
-  geom_line(data = mod.pog.dat, aes(x=zlogMass, y=Estimate))+
+ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+  geom_point(alpha =.6)+
+  geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
+  geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
+  geom_smooth(data = mod.pog.dat, aes(x=zlogMass, y=Estimate))+
   geom_ribbon(data = mod.pog.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
