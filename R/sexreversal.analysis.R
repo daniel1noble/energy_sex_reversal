@@ -204,16 +204,17 @@ dimnames(post_Bas_m2)
 bass.raw.summary <- bassiana.data %>% 
       group_by(day, id, sex) %>% 
       summarise(MR = mean(log(O2_min)),
-                MR.se = std.error(log(O2_min)),
-                MR.sd = sd(log(O2_min)), 
-                zlogMass = mean(zlogMass)) %>%
-      ungroup() %>% 
-      mutate(mass.se = std.error(zlogMass))
+                MR.se = std.error(log(O2_min)), 
+                zlogMass = mean(zlogMass),
+                zstartmass = mean(zstartmass), 
+                zendmass = mean(zendmass)) %>% 
+      mutate(a = ((zstartmass - zlogMass)^2),
+             b = ((zstartmass - zlogMass)^2), 
+             c = (a+b),
+             d = c/2,
+             sd = sqrt(d),
+             mass.se = sd/(sqrt(2)))
 
-
-  
-                
-    
     
 ####################
 # Plots
