@@ -9,7 +9,7 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
 ######### Bassiana  O2 data #########
 #####################################
 #########
-#Load data
+#Load dataa
 #########
   bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
     rename(day =date.dd.mm.yy.,
