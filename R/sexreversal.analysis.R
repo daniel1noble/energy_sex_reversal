@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -11,7 +11,7 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
 #########
 #Load dataa
 #########
-  bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
     rename(day =date.dd.mm.yy.,
            time = marker_sample,
            id = bd_liz_id, 
@@ -19,11 +19,13 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
            sex = Geno.pheno,
            mass_g = mass) %>% 
     mutate(ztime = scale(time),
-           zlogMass = scale(log(mass_g), scale = FALSE)) %>% 
+           zlogMass = scale(log(mass_g), scale = FALSE),
+           zstartmass = scale(log(start_mass_g), scale = FALSE),
+           zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
     dplyr::select(-X, -Date.Hatched, -MR_O2_min)
   # quick plot
   # box/violin plot
-  	fig <- ggplot(bassiana.data, aes(x = sex, y = log(O2_min))) + 
+  	fig <- ggplot(bassiana.data, aes(x = sex, y = (O2_min))) + 
   	  geom_point() +
   	  geom_violin() + 
   	  geom_boxplot(width=0.1, color="red", alpha=0.2) + 
@@ -68,16 +70,29 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
               sigma ~ zlogMass + ztime)
     Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
     Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
-    saveRDS(Bas_m2_brms, "./models/Bas_Post_m2_brms")
+    saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
     
     # read file in
-    Bas_m2_brms <- readRDS(file = "models/Bas_Post_m2_brms")
+    Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
 
     # Model checks
     plot(Bas_m2_brms)
     summary(Bas_m2_brms)
     #R2 of full model
     bayes_R2(Bas_m2_brms)
+
+####################
+# Checking residuals from Bas_m2_brms
+#################### 
+resid.pred <- as.data.frame(predict(Bas_m2_brms))
+ind.log.mr <-as.data.frame(log(bassiana.data$O2_min)) %>% 
+  rename(log.mr = `log(bassiana.data$O2_min)`)
+
+df <- bind_cols(ind.log.mr, resid.pred) %>% 
+  mutate(diff = (log.mr - Estimate))
+hist(df$diff)
+ggplot(df, aes(x=diff)) + 
+  geom_density()
 
 # prediction of overall model using spread draws
 Bas_m2_brms %>%
@@ -99,7 +114,7 @@ ggsave(filename ="figures/bassiana.mod2.predicition.pdf",  height = 5, width = 7
 ####################
 
     loo_compare(Bas_m1_brms, Bas_m2_brms)
-    
+
 ####################  
 # extract posteriors for best model + Plotting 
 ####################
@@ -183,6 +198,21 @@ dimnames(post_Bas_m2)
     bass.mod.dat$upper <- bass.mod.dat$Estimate + bass.mod.dat$se
     bass.mod.dat$lower <- bass.mod.dat$Estimate - bass.mod.dat$se    
     
+############## ############### ############## 
+#### df for summarizing raw datapoints #####
+############## ############### ##############  
+bass.raw.summary <- bassiana.data %>% 
+      group_by(day, id, sex) %>% 
+      summarise(MR = mean(log(O2_min)),
+                MR.se = std.error(log(O2_min)),
+                MR.sd = sd(log(O2_min)), 
+                zlogMass = mean(zlogMass)) %>%
+      ungroup() %>% 
+      mutate(mass.se = std.error(zlogMass))
+
+
+  
+                
     
     
 ####################
@@ -190,18 +220,21 @@ dimnames(post_Bas_m2)
 ####################
     # 1st ORDER: XYM
     mycolors <- c("#333333", "#990000", "#3399FF")
-    ggplot(data = bassiana.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) +
-      geom_point(alpha = .6) +
-      geom_line(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
+    ggplot(data = bass.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+      geom_point(alpha =.6)+
+      geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
+      geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
+      geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
       geom_ribbon(data = bass.mod.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
       scale_fill_manual(values = mycolors, guide = FALSE) +
       scale_color_manual(values = mycolors, guide = FALSE) +
       theme_bw() +
       theme(axis.text = element_text(size=12)) +
-        theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
-        labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-      ### save plot ##
-     ggsave(filename ="figures/bassiana..mod2.regression.pdf",  height = 5, width = 7)
+      theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
+      labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
+    
+    ### save plot ##
+    ggsave(filename ="figures/bassiana..mod2.regression.pdf",  height = 5, width = 7)
       
       
     # Regression Plot accounting for log metabolic rate and log mass across sex
@@ -287,6 +320,19 @@ summary(Pog_m2_brms)
 
 #R2 of full model
 bayes_R2(Pog_m2_brms)
+
+######## ########### ######## 
+### checking mod2 residuals ### 
+######## ########### ######## 
+resid.pred <- as.data.frame(predict(Pog_m2_brms))
+ind.log.mr <-as.data.frame(log(pogona.data$O2_min)) %>% 
+  rename(log.mr = `log(pogona.data$O2_min)`)
+
+df <- bind_cols(ind.log.mr, resid.pred) %>% 
+  mutate(diff = (log.mr - Estimate))
+hist(df$diff)
+ggplot(df, aes(x=diff)) + 
+  geom_density()
 
 # Prediction of model2 
 Pog_m2_brms %>%
