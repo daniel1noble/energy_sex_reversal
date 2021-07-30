@@ -68,10 +68,10 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
               sigma ~ zlogMass + ztime)
     Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
     Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
-    saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
+    saveRDS(Bas_m2_brms, "./models/Bas_Post_m2_brms")
     
     # read file in
-    Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
+    Bas_m2_brms <- readRDS(file = "models/Bas_Post_m2_brms")
 
     # Model checks
     plot(Bas_m2_brms)
@@ -97,6 +97,7 @@ ggsave(filename ="figures/bassiana.mod2.predicition.pdf",  height = 5, width = 7
 ####################
 # Model comparison
 ####################
+
     loo_compare(Bas_m1_brms, Bas_m2_brms)
     
 ####################  
@@ -128,7 +129,7 @@ dimnames(post_Bas_m2)
       theme(axis.text = element_text(size=12)) +
       theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
             labs(y = TeX("Sex class"), x = "Slope") 
-    ggsave(filename ="figures/bassiana.posterior.pdf",  height = 5, width = 7)
+    ggsave(filename ="figures/bassiana.mod2.posterior.pdf",  height = 5, width = 7)
     
       
     
@@ -149,7 +150,7 @@ dimnames(post_Bas_m2)
     #XY female
     newdata <- data.frame(
       sex = "XX_Female",
-      zlogMass = seq(-0.4, 0.4, length.out = 100),
+      zlogMass = seq(-0.3856391, 0.3710889, length.out = 100),
       ztime = 0)
     prXX_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXX_female <- prXX_female %>% 
@@ -158,7 +159,7 @@ dimnames(post_Bas_m2)
     #XY male 
     newdata <- data.frame(
       sex = "XY_Male",
-      zlogMass = seq(-0.4, 0.4, length.out = 100),
+      zlogMass = seq(-0.3856391, 0.3710889, length.out = 100),
       ztime = 0)
     prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXY_male <- prXY_male %>% 
@@ -167,7 +168,7 @@ dimnames(post_Bas_m2)
     #XX male
     newdata <- data.frame(
       sex = "XX_Male",
-      zlogMass = seq(-0.4, 0.4, length.out = 100),
+      zlogMass = seq(-0.3856391, 0.3710889, length.out = 100),
       ztime = 0)
     prXX_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
     prXX_male <- prXX_male %>% 
@@ -200,7 +201,7 @@ dimnames(post_Bas_m2)
         theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
         labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
       ### save plot ##
-     ggsave(filename ="figures/bassiana.regression.pdf",  height = 5, width = 7)
+     ggsave(filename ="figures/bassiana..mod2.regression.pdf",  height = 5, width = 7)
       
       
     # Regression Plot accounting for log metabolic rate and log mass across sex
@@ -283,6 +284,7 @@ summary(Pog_m2_brms)
 # Model checks
 plot(Pog_m2_brms)
 summary(Pog_m2_brms)
+
 #R2 of full model
 bayes_R2(Pog_m2_brms)
 
@@ -337,7 +339,7 @@ mcmc_areas(
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope") 
-ggsave(filename ="figures/pogona.posterior.pdf",  height = 5, width = 7)
+ggsave(filename ="figures/pogona.mod2.posterior.pdf",  height = 5, width = 7)
 
 
 
@@ -374,7 +376,7 @@ prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = N
 prZZm <- prZZm %>% 
   mutate(sex = "ZZm")
 
-#ZZ female
+#ZZ females
 newdata <- data.frame(
   sex = "ZZf",
   zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
@@ -408,4 +410,4 @@ ggplot(data = pogona.data, aes(zlogMass, log(O2_min), group = sex, color= sex)) 
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-ggsave(filename ="figures/pogona.regression.pdf",  height = 5, width = 7)
+ggsave(filename ="figures/pogona.mod2.regression.pdf",  height = 5, width = 7)
