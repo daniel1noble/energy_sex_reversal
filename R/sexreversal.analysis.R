@@ -233,7 +233,7 @@ bass.raw.summary <- bassiana.data %>%
     
     
     ### save plot ##
-    ggsave(filename ="figures/bassiana..mod2.regression.pdf",  height = 5, width = 7)
+    ggsave(filename ="figures/bassiana..mod2.regression.pdf",   height = 10, width = 16)
       
       
     # Regression Plot accounting for log metabolic rate and log mass across sex
@@ -477,6 +477,6 @@ p <- ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
 ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
-ggsave(filename ="figures/pogona.mod2.regression.pdf",  height = 5, width = 7)
+ggsave(filename ="figures/pogona.mod2.regression.pdf",  height = 10, width = 16.15)
 
 
