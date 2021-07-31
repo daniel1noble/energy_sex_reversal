@@ -145,10 +145,7 @@ dimnames(post_Bas_m2)
       theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
             labs(y = TeX("Sex class"), x = "Slope") 
     ggsave(filename ="figures/bassiana.mod2.posterior.pdf",  height = 5, width = 7)
-    
-      
-    
-    
+
     # contrast phenotype slopes
     bass.phenotype <- as.mcmc(XXm - XYm)
     mean(bass.phenotype)
@@ -210,7 +207,7 @@ bass.raw.summary <- bassiana.data %>%
                 zendmass = mean(zendmass)) %>% 
       mutate(a = ((zstartmass - zlogMass)^2),
              b = ((zstartmass - zlogMass)^2), 
-             c = (a+b),
+             c = (a+b)/2,
              d = c/2,
              sd = sqrt(d),
              mass.se = sd/(sqrt(2)))
@@ -220,19 +217,20 @@ bass.raw.summary <- bassiana.data %>%
 # Plots
 ####################
     # 1st ORDER: XYM
-    mycolors <- c("#333333", "#990000", "#3399FF")
-    ggplot(data = bass.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+  mycolors <- c("#333333", "#990000", "#3399FF")
+    p<-  ggplot(data = bass.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
       geom_point(alpha =.6)+
       geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
       geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
-      geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
-      geom_ribbon(data = bass.mod.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
+      geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = lower, ymax = upper, fill = sex, colour = sex), stat = "identity") +
       scale_fill_manual(values = mycolors, guide = FALSE) +
       scale_color_manual(values = mycolors, guide = FALSE) +
       theme_bw() +
       theme(axis.text = element_text(size=12)) +
       theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
       labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
+    ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
+    
     
     ### save plot ##
     ggsave(filename ="figures/bassiana..mod2.regression.pdf",  height = 5, width = 7)
@@ -268,7 +266,7 @@ bass.raw.summary <- bassiana.data %>%
 #########
 #Load data
 ########
-    pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
       rename(day =date.dd.mm.yy.,
              time = marker_sample,
              id = bd_liz_id, 
@@ -467,16 +465,18 @@ pogona.raw.summary <- pogona.data %>%
 # Plots
 ####################
 mycolors <- c("#333333", "#990000", "#3399FF")
-ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+p <- ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
   geom_point(alpha =.6)+
   geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
   geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
-  geom_smooth(data = mod.pog.dat, aes(x=zlogMass, y=Estimate))+
-  geom_ribbon(data = mod.pog.dat, aes(y = NULL, ymin = lower, ymax = upper, fill = sex), alpha = .5)+
+  geom_smooth(data = mod.pog.dat, aes(x=zlogMass, y=Estimate, ymin = lower, ymax = upper, fill = sex, colour = sex), stat = "identity")+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
   theme_bw() +
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
+ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
 ggsave(filename ="figures/pogona.mod2.regression.pdf",  height = 5, width = 7)
+
+
