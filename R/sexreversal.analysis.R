@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -351,7 +351,11 @@ ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
       scale_fill_manual(values = mycolors, guide = FALSE)+
       facet_grid(test~., scales = "free", switch="y")+
       scale_y_continuous(position = "right")+
+      xlab("Predicted Mean Metabolic Rate")+
+      scale_x_continuous(name="Predicted Mean Metabolic Rate", breaks = seq (-5.3, -3.9, by=0.3), limits=c(-5.3, -3.9))+
       theme_bw()
+
+
 # save plot
 ggsave(filename ="figures/bassiana.mod2.density.plot.pdf",   height = 10, width = 16)
 
@@ -387,6 +391,7 @@ pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analys
              mass_g = mass) %>% 
       group_by(sex) %>% 
       mutate(ztime = scale(time),
+             logmass = log(mass_g), 
              zlogMass = scale(log(mass_g), scale = FALSE),
              zstartmass = scale(log(start_mass_g), scale = FALSE),
              zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
@@ -568,13 +573,13 @@ summary(bodymass)
 ########### Calculating 1SD above & below predicted values  ###########
 ######## ######## ######## ######## ######## ######## ######## ######## 
 # 1sd from mean plots
-Pog_SD_2_values <- pogona.data %>% 
-  group_by(sex) %>% 
+Pog_SD_2_values <- pogona.data  %>% 
   summarise(mean = mean(zlogMass),
-            sd =  sd(zlogMass),
+            sd = sd(zlogMass),
             above = mean +sd,
-            below = mean -sd, 
-            tabove = mean + (sd*2))
+            below = mean -sd) %>% 
+  as.data.frame()
+
 ############
 #1SD above the mean
 ############
@@ -689,8 +694,8 @@ p <- ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
-
+reg <- ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
+reg
 
 ############
 # dinsity plot pogona
@@ -705,6 +710,9 @@ ggplot(SD.pog.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   scale_fill_manual(values = mycolors, guide = FALSE)+
   facet_grid(test~., switch="y")+
   scale_y_continuous(position = "right")+
+  scale_x_continuous(name="Predicted Mean Metabolic Rate", breaks = seq (-3,0, by=0.5), limits = c(-3,0))+
   theme_bw()
+
+
 # save plot
 ggsave(filename ="figures/pog.mod2.density.plot.pdf",   height = 10, width = 16)
