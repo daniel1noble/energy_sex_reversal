@@ -313,7 +313,7 @@ SD_2_values <- bassiana.data %>%
       mutate(sex = "XX_Male",
              se = std.error(Estimate))
     SD.bass.within <- rbind(XX_male_within, XY_male_within, XX_female_within) %>% 
-      mutate(test = "±1SD")
+      mutate(test = "Mean")
     
 ####################
 # ALL Bassiana Plots
@@ -344,7 +344,7 @@ ggsave(filename ="figures/bassiana.mod2.regression.pdf",   height = 10, width = 
 SD.bass.mod.dat <- rbind(SD.bass.above, SD.bass.below, SD.bass.within) %>% 
       group_by(test, sex)
 # SD Plot
-SD.bass.mod.dat$test <- factor(SD.bass.mod.dat$test, levels = c("+1SD", "±1SD", "-1SD"))
+SD.bass.mod.dat$test <- factor(SD.bass.mod.dat$test, levels = c("+1SD", "Mean", "-1SD"))
 mycolors <- c("#333333", "#990000", "#3399FF")
 ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
       geom_density(alpha = .4) +
@@ -569,7 +569,7 @@ bodymass <- lm(zlogMass ~sex  , data = pogona.raw.summary)
 summary(bodymass)
 
 ######## ######## ######## ######## ######## ######## ######## ######## 
-##################           BASSIANA               ##################           
+##################           Pogona               ##################           
 ########### Calculating 1SD above & below predicted values  ###########
 ######## ######## ######## ######## ######## ######## ######## ######## 
 # 1sd from mean plots
@@ -675,7 +675,7 @@ ZZf_within <- prZZf %>%
   mutate(sex = "ZZf",
          se = std.error(Estimate))
 SD.pog.within <- rbind(ZWf_within, ZZf_within, ZZm_within) %>% 
-  mutate(test = "±1SD")
+  mutate(test = "Mean")
 
 
 ####################
@@ -703,7 +703,7 @@ reg
 # combinding data for plots
 SD.pog.mod.dat <- rbind(SD.pog.above, SD.pog.below, SD.pog.within) %>% 
   group_by(test, sex)
-SD.pog.mod.dat$test <- factor(SD.pog.mod.dat$test, levels = c("+1SD", "±1SD", "-1SD"))
+SD.pog.mod.dat$test <- factor(SD.pog.mod.dat$test, levels = c("+1SD", "Mean", "-1SD"))
 mycolors <- c("#333333", "#990000", "#3399FF")
 ggplot(SD.pog.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   geom_density(alpha = .4) +
