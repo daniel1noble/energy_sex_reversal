@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -40,17 +40,36 @@ bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.an
 ##############
 ## Model 1
 ##############
-    suppressMessages(
+  	rerun1=FALSE
+    if(rerun1){
+  	
+  	suppressMessages(
         Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                       family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4))
+                       family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, 
+                       thin = 1, control = list(adapt_delta=0.95), cores = 4))
       	Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
     saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
+    } else {Bas_m1_brms <- readRDS("./models/Bas_m1_brms")}
     summary(Bas_m1_brms)
-
+    
+    # Check residuals. Look pretty darn good to me. @Kris, I suggest maybe plotting the predcited values (i.e., fitted) on the figures as oposed to raw data because the fitted values will take ito account random effects etc. IT will make it clear how they link up with model lines better probabably. You can calculate "residuals" as below. You can see they are fairly normally distributed. 
+    fitted <- predict(Bas_m1_brms)[1:dim(bassiana.data)[1], 1] # Predcit mean for each data
+         e <- with(bassiana.data, log(O2_min)) - fitted
+  
+  # Turn to function to avoid having to do this
+         residuals_brms <- function(model, data){
+           fitted <- predict(model)[1:dim(data)[1], 1] # Predcit mean for each data
+           e <- with(data, log(O2_min)) - fitted
+           return(e)
+         }
+         
+         
     # extract posteriors
-    post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
-    post_meanXX_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXX_Male:zlogMass"]
-    post_meanXY_male_slope <- post_Bas_m1[,"b_zlogMass"] + post_Bas_m1[,"b_sexXY_Male:zlogMass"]
+               post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
+    post_meanXX_male_slope <- post_Bas_m1[,"b_zlogMass"] + 
+                              post_Bas_m1[,"b_sexXX_Male:zlogMass"]
+    post_meanXY_male_slope <- post_Bas_m1[,"b_zlogMass"] + 
+                              post_Bas_m1[,"b_sexXY_Male:zlogMass"]
 
     # contarst slopes
     contrastSlope <- as.mcmc(post_meanXX_male_slope - post_meanXY_male_slope)
@@ -66,35 +85,33 @@ bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.an
 ##############
 ## Model 2
 ##############
-    mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-              sigma ~ zlogMass + ztime)
-    Bas_m2_brms <- brm(mod_bas, family = gaussian(), data = bassiana.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
-    Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
-    saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
     
-    # read file in
-    Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
-
+    rerun2=FALSE
+    
+    if(rerun2){
+        mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+                sigma ~ zlogMass + ztime)
+        Bas_m2_brms <- brm(mod_bas, family = gaussian(), 
+                           data = bassiana.data, iter= 2000, warmup = 1000, 
+                           thin = 1, control = list(adapt_delta=0.95), cores = 4)
+        Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
+        saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
+    } else {
+      # read file in
+      Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
+    }
+    
+    # Check residuals. Look pretty darn good to me. @Kris, I suggest maybe plotting the predcited values (i.e., fitted) on the figures as oposed to raw data because the fitted values will take ito account random effects etc. IT will make it clear how they link up with model lines better probabably. You can calculate "residuals" as below. You can see they are fairly normally distributed. 
     # Model checks
-    plot(Bas_m2_brms)
-    summary(Bas_m2_brms)
-    #R2 of full model
-    bayes_R2(Bas_m2_brms)
+      plot(Bas_m2_brms)
+      e <- residuals_brms(Bas_m2_brms, bassiana.data)
+      hist(e)
+      summary(Bas_m2_brms)
+    
+      #R2 of full model
+      bayes_R2(Bas_m2_brms)
 
-####################
-# Checking residuals from Bas_m2_brms
-#################### 
-resid.pred <- as.data.frame(predict(Bas_m2_brms))
-ind.log.mr <-as.data.frame(log(bassiana.data$O2_min)) %>% 
-  rename(log.mr = `log(bassiana.data$O2_min)`)
-
-df <- bind_cols(ind.log.mr, resid.pred) %>% 
-  mutate(diff = (log.mr - Estimate))
-hist(df$diff)
-ggplot(df, aes(x=diff)) + 
-  geom_density()
-
-# prediction of overall model using spread draws
+# prediction of overall model using spread draws. @Kris, not sure what this code below is for?
 Bas_m2_brms %>%
       spread_draws(b_Intercept, b_zlogMass) %>%
       mutate(zlogmass = list(seq(-0.4, 0.4, length.out = 100))) %>% #the observed value range of zlogmass
@@ -112,6 +129,8 @@ ggsave(filename ="figures/bassiana.mod2.predicition.pdf",  height = 5, width = 7
 ####################
 # Model comparison
 ####################
+    
+    # SE is large and difference is probably not sufficeint to warrent a het model
     loo_compare(Bas_m1_brms, Bas_m2_brms)
 
 ####################  
