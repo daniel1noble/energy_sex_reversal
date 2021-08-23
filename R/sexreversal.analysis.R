@@ -186,7 +186,7 @@ prXX_female <- data.frame(cbind(predict(Bas_m2_brms,
                                         summary = TRUE),
                                 zlogMass = newdata_XY_female$zlogMass))
 prXX_female <- prXX_female %>% 
-  mutate(sex = "XX_Female") # @ KRIS. This is incorrect. I'm not sure why you are adding se in. You have the Est.Error at the point estimate already. It's the summary of the posterior distribution. What you're doing here is taking se of the predcited estimates, which doens't really make much sense. I've removed it
+  mutate(sex = "XX_Female") # @ KRIS. This is incorrect. I'm not sure why you are adding se in. You have the Est.Error at the point estimate already. It's the summary of the posterior distribution for that mass. What you were doing here is taking se of the predcited estimates, which doens't really make much sense. I've removed it
 
 #XY male 
 newdata_XY_male <- data.frame(sex = "XY_Male",
@@ -206,8 +206,8 @@ newdata_XX_male <- data.frame(sex = "XX_Male",
                               ztime = 0, day = NA, id = NA) # If I understand this correctly, NA for day and id would choose an average deviation, so 0. This should allow you to use the re_formula in model predcitions
 
 prXX_male <- data.frame(cbind(predict(Bas_m2_brms, 
-                                      newdata = newdata_XX_male, 
-                                      zlogMass=newdata_XX_male$zlogMass)))
+                                      newdata = newdata_XX_male), 
+                                      zlogMass=newdata_XX_male$zlogMass))
 prXX_male <- prXX_male %>% 
               mutate(sex = "XX_Male")
 
@@ -220,6 +220,7 @@ bass.mod.dat <- rbind(prXX_female, prXX_male, prXY_male) %>%
 ############## ############### ############## #########
 ## Better to use fitted valuess instead of raw data from bass.raw.summary because it will better match the 
 
+# @Kris. Can add in the fitted value from the model, which should make the data more closely mimic the fitted lines...or should anyway.
 bassiana.data2<- data.frame(cbind(bassiana.data, predict(Bas_m1_brms)))
 
 bass.raw.summary <- bassiana.data2 %>% 
@@ -236,7 +237,7 @@ bass.raw.summary <- bassiana.data2 %>%
          sd = sqrt(d),
          mass.se = sd/(sqrt(2)))
 #############
-# test for differences in body mass
+# test for differences in body mass. @KRIS, Seems better placed above with analyses not here where you're plotting
 #############
 
 bodymass <- brm(zlogMass ~ sex , data = bass.raw.summary)
@@ -244,7 +245,7 @@ summary(bodymass)
 bm_diff <- hypothesis(bodymass, 'sexXX_Male + sexXY_Male = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
-# Here's one way you can get a p-value equivalent
+# @Kris, here's one way you can get a p-value equivalent for the full hypothesis test. 
 pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))     
 ######## ######## ######## ######## ######## ######## ######## ######## 
 ##################           BASSIANA               ##################           
@@ -262,16 +263,18 @@ SD_2_values <- bassiana.data %>%
 #1SD above the mean
 ############
 # XX female
-newdata <- data.frame(sex = "XX_Female",
+newdata_XX_Female <- data.frame(sex = "XX_Female",
                       zlogMass = seq(0.212, 0.3710889, length.out = 100),
-                      ztime = 0)
+                      ztime = 0, day = NA, id = NA)
 
-prXX_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
-                                        re_formula = NA, summary = TRUE), 
-                                zlogMass=newdata$zlogMass))
+prXX_female <- data.frame(cbind(predict(Bas_m2_brms, 
+                                        newdata = newdata_XX_Female, 
+                                        summary = TRUE), 
+                                zlogMass=newdata_XX_Female$zlogMass))
+
 XX_female_above <- prXX_female %>% 
-  mutate(sex = "XX_Female", 
-         se = std.error(Estimate))
+                    mutate(sex = "XX_Female")
+
 ## XY male 
 newdata <- data.frame(sex = "XY_Male",
                       zlogMass = seq(0.165, 0.3710889, length.out = 100),
@@ -340,7 +343,7 @@ XX_male_below <- prXX_male %>%
 SD.bass.below <- rbind(XX_male_below, XY_male_below, XX_female_below) %>% 
   mutate(test = "-1SD")
 ############
-#within 1sd the mean
+# MEAN
 ############
 # XX female
 newdata <- data.frame(sex = "XX_Female",
@@ -388,11 +391,15 @@ SD.bass.within <- rbind(XX_male_within, XY_male_within, XX_female_within) %>%
 mycolors <- c("#333333", "#990000", "#3399FF")
 
 p<-  ggplot(data = bass.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+  # Add in the predicted data given each rows data. 
   geom_point(alpha =.6)+
   geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
   geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
+  # Now add in the model predictions
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, colour = sex)) + 
-  geom_ribbon(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) + ## @KRIS, not quite correct here. You have an Est.Error which is the one you want, not se that you calculated. #####************** PLEASE HAVE A LOOK AT CHANGING ALL THESE. THIS RELATES TO MY COMMENT ABOVE> 
+  geom_ribbon(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) + ## @KRIS, not quite correct here. You have an Est.Error which is the one you want, not se that you calculated. #####************** PLEASE HAVE A LOOK AT CHANGING ALL THESE. THIS RELATES TO MY COMMENT ABOVE 
+  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate+Est.Error, colour = sex)) +
+  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
