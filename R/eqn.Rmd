@@ -1,16 +1,62 @@
 ---
-title: "equation"
-output: bookdown::word_document2
+output: 
+  bookdown::word_document2:
+    toc: no
+    toc_depth: 6
+    number_sections: false
+    reference_docx: template.docx
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+```
+```{r, package, results = 'hide'}
+# Packages
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+# Equation can be written in latex through markdown
 ```
 
-# Equation can be written in latex through markdown
-
+# Statistical Analysis
 $$
 MR_{ijk} = \left ( \beta_{0} + id_{j} + d_{k}\right) + \left( \beta_{6} +  \beta_{id_{j}} \cdot time_{z} \right) + \beta_{1} \cdot Sex_{XXf} + \beta_{2} \cdot Sex_{XXm} + \beta_{3} \cdot log \ Mass_{sc} + \beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf} + \beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm} + e_{ijk}
 $$
 
 where $MR_{ijk}$ is the metabolic rate ($log\ VO^2 \cdot mL^{-1} \cdot min^{-1}$) for measurement *i* (i = 1 to $N_{m}$, number of measurements) on individual *j* (j = 1 to $N_{id}$, number of individuals) and day *k* (k = 1 to $N_{d}$, number of days).  We estimated a linear slope ($\beta_{6}$) for measurement time ($time_{z}$, z-transformed); a linear slope for log transformed mass ($log \ Mass_{sc}$, centered on mean, sc) and contrasts for the difference sex classes ($\beta_{1}-\beta_{2}$), where $Sex_{XXf}$ and $Sex_{XXm}$ are for true sex and sex reversed animals, respectively. We also estimated different mass scaling relationships for the different sex classes (i.e., $\beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf}$ and  $\beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm}$, respectively). We included a random intercept ($id_{j}$) and slope for $time_{z}$ ($\beta_{id_{ij}}$) for individual *j* across measurement occations. Deviations were sampled from a multivariate normal distribution (~$MVN \left( [0,0], ID \right)$, where **ID** is a (co)variance matrix with a random intercept and slope variance and their covariance). We also included a random day effect ($d_{k}$) (~ $N\left( 0, \sigma^2_{k}\right)$). 
+
+# Results
+
+```{r, bassi, results = 'hide', echo = FALSE}
+#####################################
+######### Bassiana  O2 data #########
+#####################################
+#########
+#Load data
+#########
+bassiana.data <- read.csv("../final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  rename(day =date.dd.mm.yy.,
+         time = marker_sample,
+         id = bd_liz_id, 
+         O2_min = Final_MR_O2_min,
+         sex = Geno.pheno,
+         mass_g = mass) %>% 
+  mutate(ztime = scale(time),
+         zlogMass = scale(log(mass_g), scale = FALSE),
+         zstartmass = scale(log(start_mass_g), scale = FALSE),
+         zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
+  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
+
+N_bass <- bassiana.data %>% group_by(sex) %>% summarise(n = length(unique(id))) %>% data.frame()
+
+```
+# Bassiana
+In total sample sizes ranged from `r min(N_bass[,"n"])` --`r max(N_bass[,"n"])` (`r N_bass[1,1]` = `r N_bass[N_bass$sex == "XX_Female","n"]`; Figure \@ref(fig:figure2))
+
+
+```{r figure2, fig.width = 14, fig.height= 14, fig.cap="**Mean spectral reflectance curves for male chameleons for representative body regions (gular, top flank) and background (leaves) for Hawaii and Kenya**. The context for measurement was **(A)** male contest displays; **(B)** courtship; **(C)** bird predator; and **(D)** snake predator. More details in online supplementary text and Fig. S5."}
+# library(magick)
+# img <- image_read("./output/figures/Figure3.png")
+# img
+
+```
