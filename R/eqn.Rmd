@@ -60,3 +60,11 @@ In total sample sizes ranged from `r min(N_bass[,"n"])` --`r max(N_bass[,"n"])` 
 # img
 
 ```
+
+Table \@ref(tab:table3)
+
+```{r table3, fig.width = 9, fig.height = 1, fig.asp = 0.1136364, tab.cap = "Planned contrasts between mean luminance and chromatic contrast in Hawaii and Kenya for both predators (snakes and birds). Estimates of the mean difference ebtween Hawaii and Kenya propulations are provided along with their 95% confidence intervals (95% CI lower and upper). Wald tests of contrast significance are provided (F, degrees of freedom (df) and associated p-value).  We also applied a Bonferroni correction to p-values to control for multiple comparisons."}
+ # contrast <- read.csv(file = "./output/tables/Table3_MS.csv")
+ # table3 <- flextable(contrast) %>% table_style8() %>% fit_to_width(max_width = 7)
+ # table3
+```
