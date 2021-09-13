@@ -112,21 +112,6 @@ summary(Bas_m2_brms)
 #R2 of full model
 bayes_R2(Bas_m2_brms)
 
-# prediction of overall model using spread draws. @Kris, not sure what this code below is for?
-    Bas_m2_brms %>%
-      spread_draws(b_Intercept, b_zlogMass) %>%
-      mutate(zlogmass = list(seq(-0.4, 0.4, length.out = 100))) %>% #the observed value range of zlogmass
-      unnest(zlogmass) %>%
-      mutate(pred = exp(b_zlogMass + b_zlogMass*zlogmass)/(1+exp(b_zlogMass + b_zlogMass*zlogmass))) %>%
-      group_by(zlogmass) %>%
-      summarise(pred_m = mean(pred, na.rm = TRUE),
-                pred_low = quantile(pred, prob = 0.025),
-                pred_high = quantile(pred, prob = 0.975)) %>%
-      ggplot(aes(x = zlogmass, y = pred_m)) +
-      geom_line() +
-      geom_ribbon(aes(ymin = pred_low, ymax = pred_high), alpha=0.2)
-    ggsave(filename ="figures/bassiana.mod2.predicition.pdf",  height = 5, width = 7)
-
 ####################
 # Model comparison
 ####################
@@ -184,14 +169,12 @@ prXX_female <- data.frame(cbind(predict(Bas_m2_brms,
                                         summary = TRUE),
                                 zlogMass = newdata_XY_female$zlogMass))
 prXX_female <- prXX_female %>% 
-  mutate(sex = "XX_Female") # @ KRIS. This is incorrect. I'm not sure why you are adding se in. You have the Est.Error at the point estimate already. It's the summary of the posterior distribution for that mass. What you were doing here is taking se of the predcited estimates, which doens't really make much sense. I've removed it
-
+  mutate(sex = "XX_Female") 
 #XY male 
 newdata_XY_male <- data.frame(sex = "XY_Male",
                               zlogMass = seq(-0.3856391, 0.3710889, 
                                              length.out = 100),
                               ztime = 0, day = NA, id = NA) # If I understand this correctly, NA for day and id would choose an average deviation, so 0. This should allow you to use the re_formula in model predcitions
-
 prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata_XY_male,
                                       summary = TRUE), 
                               zlogMass = newdata_XY_male$zlogMass))
@@ -201,8 +184,7 @@ prXY_male <- prXY_male %>%
 newdata_XX_male <- data.frame(sex = "XX_Male",
                               zlogMass = seq(-0.3856391, 0.3710889, 
                                              length.out = 100),
-                              ztime = 0, day = NA, id = NA) # If I understand this correctly, NA for day and id would choose an average deviation, so 0. This should allow you to use the re_formula in model predcitions
-
+                              ztime = 0, day = NA, id = NA) 
 prXX_male <- data.frame(cbind(predict(Bas_m2_brms, 
                                       newdata = newdata_XX_male), 
                                       zlogMass=newdata_XX_male$zlogMass))
@@ -274,7 +256,8 @@ prXX_female <- data.frame(cbind(predict(Bas_m2_brms,
                                 zlogMass=newdata_XX_Female$zlogMass))
 
 XX_female_above <- prXX_female %>% 
-                    mutate(sex = "XX_Female")
+                    mutate(sex = "XX_Female",
+                           se = std.error(Estimate))
 
 ## XY male 
 newdata <- data.frame(sex = "XY_Male",
@@ -391,14 +374,12 @@ SD.bass.within <- rbind(XX_male_within, XY_male_within, XX_female_within) %>%
 # Regression plot with predicted line and body mass
 mycolors <- c("#333333", "#990000", "#3399FF")
 
-p<-  ggplot(data = bass.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
+p<-  ggplot(data =bassiana.data2 , aes(zlogMass, Estimate, group = sex, color= sex )) +
   # Add in the predicted data given each rows data. 
-  geom_point(alpha =.6)+
-  geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
-  geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
+  geom_point(alpha =.3)+
   # Now add in the model predictions
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, colour = sex)) + 
-  geom_ribbon(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) + ## @KRIS, not quite correct here. You have an Est.Error which is the one you want, not se that you calculated. #####************** PLEASE HAVE A LOOK AT CHANGING ALL THESE. THIS RELATES TO MY COMMENT ABOVE 
+  geom_ribbon(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate+Est.Error, colour = sex)) +
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
   geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
@@ -434,19 +415,6 @@ ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
 # save plot
 ggsave(filename ="figures/bassiana.mod2.density.plot.pdf",   height = 10, width = 16)
 
-### ### ### ### 
-### BRMS try ### 
-### ### ### ### 
-bassiana.data %>%
-  group_by(sex) %>%
-  modelr::data_grid(zlogMass = zlogMass,ztime =ztime, day = day, id = id) %>%
-  add_fitted_draws(Bas_m2_brms) %>%
-  ggplot(aes(x = zlogMass, y = log(O2_min), color = ordered(sex))) +
-  stat_lineribbon(aes(y = .value)) +
-  geom_point(data = bassiana.data) +
-  scale_fill_brewer(palette = "Greys") +
-  scale_color_brewer(palette = "Set2")
-dimnames(post_Bas_m2)
 
 ####################################
 ######### Pogona  O2 data  ######### 
@@ -455,7 +423,6 @@ dimnames(post_Bas_m2)
 #Load data
 ########
 pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
-
   rename(day =date.dd.mm.yy.,
          time = marker_sample,
          id = bd_liz_id, 
@@ -485,18 +452,20 @@ fig
 ## Model 1
 ##############
 Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4)
+                   family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, 
+                   thin = 1, control = list(adapt_delta=0.95), cores = 4, save_all_pars = TRUE)
 Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"), moment_match = TRUE)
+plot(Pog_m1_brms)
 saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 summary(Pog_m1_brms)
 bayes_R2(Pog_m1_brms)
-
+plot(Pog_m1_brms)
 ##############
 ## Model 2
 ##############
 mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
           sigma ~ zlogMass + ztime)
-Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4, save_all_pars = TRUE)
+Pog_m2_brms <- brm(mod, family = gaussian(), data = pogona.data, iter= 2000, warmup = 1000, thin = 1, control = list(adapt_delta=0.95), cores = 4, save_pars = save_pars(all = TRUE))
 Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE, reloo = TRUE)
 saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
 
