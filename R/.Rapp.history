@@ -1,0 +1,25 @@
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% #
+  rename(day =date.dd.mm.yy.,#
+         time = marker_sample,#
+         id = bd_liz_id, #
+         O2_min = Final_MR_O2_min,#
+         sex = Geno.pheno,#
+         mass_g = mass) %>% #
+  mutate(ztime = scale(time),#
+         zlogMass = scale(log(mass_g), scale = FALSE),#
+         zstartmass = scale(log(start_mass_g), scale = FALSE),#
+         zendmass = scale(log(end_mass_g), scale = FALSE))%>% #
+  dplyr::select(-X, -Date.Hatched, -MR_O2_min)#
+# quick plot#
+# box/violin plot#
+fig <- ggplot(bassiana.data, aes(x = sex, y = (O2_min))) + #
+  geom_point() +#
+  geom_violin() + #
+  geom_boxplot(width=0.1, color="red", alpha=0.2) + #
+  geom_jitter(fill = "grey", alpha = 0.3) + #
+  labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ #
+  theme_bw()#
+fig
