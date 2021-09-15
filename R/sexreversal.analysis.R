@@ -37,29 +37,34 @@ fig
 #####################################
 # Bassiana Models - Full Data
 #####################################
-##############
-## Model 1
-##############
-rerun1=FALSE
-if(rerun1){
-  
-  suppressMessages(
-    Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                       family = "gaussian", data = bassiana.data, iter= 2000, warmup = 1000, 
-                       thin = 1, control = list(adapt_delta=0.95), cores = 4))
-  Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
-  saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
-} else {Bas_m1_brms <- readRDS("./models/Bas_m1_brms")}
-summary(Bas_m1_brms)
-
 #####
-## residual function
+## residual function - used for all models
 #####
 residuals_brms <- function(model, data){
   fitted <- predict(model)[1:dim(data)[1], 1] # Predcit mean for each data
   e <- with(data, log(O2_min)) - fitted
   return(e)
 }
+
+##############
+## Model 1
+# @ dan updated the model so that ESS values were near 3000 so increased thinning to 5 and upped the iterations
+##############
+rerun1=FALSE
+if(rerun1){
+  
+  suppressMessages(
+    Bas_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+                       family = "gaussian", data = bassiana.data, iter= 5000, warmup = 1000, 
+                       thin = 5, cores = 4))
+  Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
+  saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
+} else {Bas_m1_brms <- readRDS("./models/Bas_m1_brms")}
+summary(Bas_m1_brms)
+
+# checking lags for this model, looks much better after increasing thinning and iterations  
+draws <- as.array(Bas_m1_brms)
+mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
 
 # check residuals
 e <- residuals_brms(Bas_m1_brms, bassiana.data)
@@ -82,16 +87,18 @@ bayes_R2(Bas_m1_brms)
 # Model checks
 plot(post_Bas_m1)
 
+
 ##############
 ## Model 2
+# @ dan updated the model so that ESS values were near 3000 so increased thinning to 5 and upped the iterations
 ##############
 rerun2=FALSE
 if(rerun2){
   mod_bas <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
                 sigma ~ zlogMass + ztime)
-  Bas_m2_brms <- brm(mod_bas, family = gaussian(), 
-                     data = bassiana.data, iter= 2000, warmup = 1000, 
-                     thin = 1, control = list(adapt_delta=0.95), cores = 4)
+  Bas_m2_brms <- brm(mod_bas, family = "gaussian", 
+                     data = bassiana.data, iter= 5000, warmup = 1000, 
+                     thin = 5, cores = 4)
   Bas_m2_brms <- add_criterion(Bas_m2_brms, c("loo", "waic"))
   saveRDS(Bas_m2_brms, "./models/Bas_m2_brms")
 } else {
@@ -100,6 +107,10 @@ if(rerun2){
 }
 plot(Bas_m2_brms)
 summary(Bas_m2_brms)
+
+# checking lags for this model, looks much better after increasing thinning and iterations  
+draws <- as.array(Bas_m2_brms)
+mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
 
 # Check residuals. 
 plot(Bas_m2_brms)
@@ -120,15 +131,15 @@ loo_compare(Bas_m1_brms, Bas_m2_brms)
 ####################  
 # extract posteriors for best model + Plotting 
 ####################
-post_Bas_m2 <- posterior_samples(Bas_m2_brms, pars = "^b")
-dimnames(post_Bas_m2)
+post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
+dimnames(Bas_m1_brms)
 
 # extracting posteriors 
-XXf <- as.array(post_Bas_m2[,"b_zlogMass"])
-XXm <- as.array(post_Bas_m2[,"b_zlogMass"] + 
-                post_Bas_m2[,"b_sexXX_Male:zlogMass"])
-XYm <- as.array(post_Bas_m2[,"b_zlogMass"] + 
-                post_Bas_m2[,"b_sexXY_Male:zlogMass"])
+XXf <- as.array(post_Bas_m1[,"b_zlogMass"])
+XXm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
+                post_Bas_m1[,"b_sexXX_Male:zlogMass"])
+XYm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
+                post_Bas_m1[,"b_sexXY_Male:zlogMass"])
 
 bass.dat <- cbind(XXf, XXm, XYm)
 
@@ -154,19 +165,65 @@ bass.genotype <- as.mcmc(XXf - XXm)
 mean(bass.genotype)
 HPDinterval(bass.genotype)
 
+####################  
+# manual predict values for lines
+####################
+# XX females
+a_female <- post_Bas_m1$b_Intercept
+b_mass_female <- post_Bas_m1$b_zlogMass
+zlogMass = seq(-0.3856391, 0.3710889, 
+               length.out = 100)
+y_female <- a_female + b_mass_female %*% t(zlogMass)
+colnames(y_female) <- zlogMass
+Estimate <- colMeans(y_female)
+Q2.5 <- apply(y_female, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_female, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_female, 2, function(x) sd(x))
+XXf.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5) %>% 
+  mutate(sex = "XX_Female")
+
+# XXm
+a_XX_male_xx <- a_female + post_Bas_m1$b_sexXX_Male 
+b_XX_male_xx <- b_mass_female + post_Bas_m1$`b_sexXX_Male:zlogMass`
+y_XX_male <- a_XX_male_xx + b_XX_male_xx %*% t(zlogMass)
+colnames(y_XX_male) <- zlogMass
+Estimate <- colMeans(y_XX_male)
+Q2.5 <- apply(y_XX_male, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_XX_male, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_XX_male, 2, function(x) sd(x))
+XXm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
+  mutate(sex = "XX_Male")
+
+
+# XYm
+a_XY_male <- a_female + post_Bas_m1$b_sexXY_Male 
+b_XY_male <- b_mass_female + post_Bas_m1$`b_sexXY_Male:zlogMass`
+y_XY_male <- a_XY_male + b_XY_male %*% t(zlogMass)
+colnames(y_XY_male) <- zlogMass
+Estimate <- colMeans(y_XY_male)
+Q2.5 <- apply(y_XY_male, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_XY_male, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_XY_male, 2, function(x) sd(x))
+XYm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
+  mutate(sex = "XY_Male")
+
+# combind predicitions
+bass.mannual.pred <- rbind(XXf.man.pred, XXm.man.pred, XYm.man.pred)
+hist(XYm.man.pred$Estimate)
 
 ####################
-# Sex predictions from Bas_m2_brms for regression ggplot
+# Sex predictions from Bas_m1_brms for regression ggplot
 ####################
 #XY female 
-newdata_XY_female <- data.frame( sex = "XX_Female",
+newdata_XY_female <- data.frame(sex = "XX_Female",
                                  zlogMass = seq(-0.3856391, 0.3710889, 
                                                 length.out = 100),
                                  ztime = 0, day = NA, id = NA) # If I understand this correctly, NA for day and id would choose an average deviation, so 0. This should allow you to use the re_formula in model predictions
 
-prXX_female <- data.frame(cbind(predict(Bas_m2_brms, 
-                                        newdata = newdata_XY_female, 
-                                        summary = TRUE),
+prXX_female <- data.frame(cbind(predict(Bas_m1_brms, 
+                                        newdata = newdata_XY_female,
+                                        summary = TRUE,
+                                        re.form = NA),
                                 zlogMass = newdata_XY_female$zlogMass))
 prXX_female <- prXX_female %>% 
   mutate(sex = "XX_Female") 
@@ -175,8 +232,9 @@ newdata_XY_male <- data.frame(sex = "XY_Male",
                               zlogMass = seq(-0.3856391, 0.3710889, 
                                              length.out = 100),
                               ztime = 0, day = NA, id = NA) 
-prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata_XY_male,
-                                      summary = TRUE), 
+prXY_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata_XY_male,
+                                      summary = TRUE,
+                                      re_formula = NA), 
                               zlogMass = newdata_XY_male$zlogMass))
 prXY_male <- prXY_male %>% 
               mutate(sex = "XY_Male")
@@ -185,7 +243,7 @@ newdata_XX_male <- data.frame(sex = "XX_Male",
                               zlogMass = seq(-0.3856391, 0.3710889, 
                                              length.out = 100),
                               ztime = 0, day = NA, id = NA) 
-prXX_male <- data.frame(cbind(predict(Bas_m2_brms, 
+prXX_male <- data.frame(cbind(predict(Bas_m1_brms, 
                                       newdata = newdata_XX_male), 
                                       zlogMass=newdata_XX_male$zlogMass))
 prXX_male <- prXX_male %>% 
@@ -379,11 +437,11 @@ p<-  ggplot(data =bassiana.data2 , aes(zlogMass, Estimate, group = sex, color= s
   # Add in the predicted data given each rows data. 
   geom_point(alpha =.3)+
   # Now add in the model predictions
-  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, colour = sex)) + 
-  geom_ribbon(data = bass.mod.dat, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
-  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate+Est.Error, colour = sex)) +
-  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
-  geom_smooth(data = bass.mod.dat, aes(x=zlogMass, y=Estimate))+
+  geom_smooth(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate, colour = sex)) + 
+  geom_ribbon(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
+  geom_smooth(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate+Est.Error, colour = sex)) +
+  geom_smooth(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
+  geom_smooth(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate))+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
   theme_bw() +
@@ -454,15 +512,20 @@ fig
 ##############
 ## Model 1 @dan control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 4000
 ##############
-Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                   family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
-                   thin = 5, cores = 4)
-# @dan got a warning about our waic values and it suggested to add moment_match = TRUE 
-Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"), moment_match = TRUE)
-plot(Pog_m1_brms)
+rerun1=FALSE
+if(rerun1){
+  
+  suppressMessages(
+    Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+                       family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
+                       thin = 5, cores = 4))
+    # @dan got a warning about our waic values and it suggested to add moment_match = TRUE 
+  Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"), moment_match = TRUE)
+  saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
+} else {Pog_m1_brms <- readRDS("./models/Pog_m1_brms")}
 summary(Pog_m1_brms)
-bayes_R2(Pog_m1_brms)
-saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
+
+
 
 # check residuals
 e <- residuals_brms(Pog_m1_brms, pogona.data)
@@ -472,13 +535,18 @@ hist(e)
 ##############
 ## Model 2 @ dan same as above, control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 4000
 ##############
-mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-          sigma ~ zlogMass + ztime)
-Pog_m2_brms <- brm(mod, family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
-                   thin = 5, cores = 4)
-# @dan same as above, I got a warning about our waic values and it suggested to add moment_match = TRUE 
-Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE)
-saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
+rerun2=FALSE
+if(rerun2){
+  mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
+            sigma ~ zlogMass + ztime)
+  Pog_m2_brms <- brm(mod, family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
+                     thin = 5, cores = 4)
+  Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE)
+  saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
+} else {
+  # read file in
+  Pog_m2_brms <- readRDS(file = "./models/Pog_m2_brms")
+}
 
 # checking lags for this model, looks much better after increasing thinning and iterations  
 draws <- as.array(Pog_m2_brms)
@@ -492,16 +560,15 @@ summary(Pog_m2_brms)
 bayes_R2(Pog_m2_brms)
 
 ####################
-# Model comparison
-####################
-loo_compare(Pog_m2_brms,Pog_m1_brms)
-
-####################
 # Checking residuals
 ####################
 e <- residuals_brms(Pog_m2_brms, pogona.data)
 hist(e)
 
+####################
+# Model comparison
+####################
+loo_compare(Pog_m2_brms,Pog_m1_brms)
 
 ####################  
 # extract posteriors for best model + Plotting 
@@ -540,7 +607,52 @@ pog.genotype <- as.mcmc(ZZf - ZZm)
 mean(pog.genotype)
 HPDinterval(pog.genotype)
 
-############################### FINISHED HERE KW 15 Sep 2021 Need to continue working 
+
+####################  
+# manual predict values for lines
+####################
+# ZW females
+a_female <- post_pog_m2$b_Intercept
+b_mass_female <- post_pog_m2$b_zlogMass
+zlogMass = seq(-0.5029249, 1.23776, 
+               length.out = 100)
+y_female <- a_female + b_mass_female %*% t(zlogMass)
+colnames(y_female) <- zlogMass
+Estimate <- colMeans(y_female)
+Q2.5 <- apply(y_female, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_female, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_female, 2, function(x) sd(x))
+ZWf.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5) %>% 
+  mutate(sex = "ZWf")
+
+# ZZf
+a_ZZ_female <- a_female + post_pog_m2$b_sexZZf 
+b_ZZ_female <- b_mass_female + post_pog_m2$`b_sexZZf:zlogMass`
+y_ZZ_female <- a_ZZ_female + b_ZZ_female %*% t(zlogMass)
+colnames(y_ZZ_female) <- zlogMass
+Estimate <- colMeans(y_ZZ_female)
+Q2.5 <- apply(y_ZZ_female, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_ZZ_female, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_ZZ_female, 2, function(x) sd(x))
+ZZf.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
+  mutate(sex = "ZZf")
+
+
+# ZZm
+a_ZZ_male <- a_female + post_pog_m2$b_sexZZm 
+b_ZZ_male <- b_mass_female + post_pog_m2$`b_sexZZm:zlogMass`
+y_ZZ_male <- a_ZZ_male + b_ZZ_male %*% t(zlogMass)
+colnames(y_ZZ_male) <- zlogMass
+Estimate <- colMeans(y_ZZ_male)
+Q2.5 <- apply(y_ZZ_male, 2, function(x) quantile(x, probs = 0.025))
+Q97.5 <- apply(y_ZZ_male, 2, function(x) quantile(x, probs = 0.975))
+Est.Error <- apply(y_ZZ_male, 2, function(x) sd(x))
+ZZm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
+  mutate(sex = "ZZm")
+
+# combined predictions
+pog.mannual.pred <- rbind(ZZm.man.pred, ZZf.man.pred, ZWf.man.pred)
+
 ####################
 # Predictions from best model for plots
 ####################
@@ -575,9 +687,15 @@ prZZf <- prZZf %>%
 mod.pog.dat <- rbind(prZWf, prZZm, prZZf) %>% 
   group_by(sex)
 
-############## ############### ############## ##### 
-#### df for summarizing raw datapoints ggplot #####
-############## ############### ############## ####
+
+############## 
+# df for summarizing raw datapoints for ggplot 
+############## 
+# add in the fitted value from the model.
+pog.pre<- data.frame(predict(Pog_m2_brms))
+pogona.data2<- cbind(pogona.data, pog.pre)
+
+#Summarise 
 pogona.raw.summary <- pogona.data %>% 
   group_by(day, id, sex) %>% 
   summarise(MR = mean(log(O2_min)),
@@ -590,27 +708,35 @@ pogona.raw.summary <- pogona.data %>%
          c = (a+b),
          d = c/2,
          sd = sqrt(d),
-         mass.se = sd/(sqrt(2)))
+         mass.se = sd/(sqrt(2)))%>% 
+  dplyr::select(-a,-b,-c,-d)
 
-###########
-# quick check for differences in body mass
-###########
-bodymass <- lm(zlogMass ~sex  , data = pogona.raw.summary)
+
+#############
+# test for differences in body mass
+#############
+bodymass <- brm(zlogMass ~ sex , data = pogona.raw.summary)
 summary(bodymass)
-anova(bodymass)
+bm_diff <- hypothesis(bodymass, 'sexZZf + sexZZm = 0')
+mean(bm_diff$samples$H1)
+HPDinterval(mcmc(bm_diff$samples$H1))
 
-######## ######## ######## ########  ########
-######          Pogona    ########  ########           
-######### Calculating 1SD above ########  #####
-#########  & below predicted values ########  
-######## ######## ######## ######## ########
-# 1sd from mean plots
-Pog_SD_2_values <- pogona.data  %>% 
+# p-value equivalent for the full hypothesis test. 
+pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
+
+
+#############
+## Calculating 1SD above & below predicted values for density plots
+# @dan sd for zlogmass seems really weird, the errors are very small. Any ideas? 
+#############
+# 1sd and mean zlogmass values for seq
+Pog_SD_2_values <- pogona.data %>% 
+  group_by(sex) %>% 
   summarise(mean = mean(zlogMass),
-            sd = sd(zlogMass),
-            above = mean +sd,
-            below = mean -sd) %>% 
-  as.data.frame()
+            sd =  sd(zlogMass),
+            above = mean + sd,
+            below = mean - sd)
+
 ############
 #1SD above the mean
 ############
@@ -712,23 +838,29 @@ SD.pog.within <- rbind(ZWf_within, ZZf_within, ZZm_within) %>%
 # All Pogona Plots
 ####################
 mycolors <- c("#333333", "#990000", "#3399FF")
-p <- ggplot(data = pogona.raw.summary, aes(zlogMass, MR, group = sex, color= sex )) +
-  geom_point(alpha =.6)+
-  geom_errorbar(aes(ymin = MR-MR.se, ymax = MR+MR.se)) + 
-  geom_errorbarh(aes(xmin = zlogMass-mass.se, xmax = zlogMass+mass.se))+
-  geom_ribbon(data = mod.pog.dat, aes(x=zlogMass, y=Estimate, ymin = (Estimate-se), ymax = (Estimate+se), fill = sex, colour = sex), stat = "identity", alpha = .5)+
-  geom_smooth(data = mod.pog.dat, aes(x=zlogMass, y=Estimate))+
+
+p<-  ggplot(data =pogona.data2 , aes(zlogMass, Estimate, group = sex, color= sex )) +
+  # Add in the predicted data given each rows data. 
+  geom_point(alpha =.3)+
+  # Now add in the model predictions
+  geom_smooth(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate, colour = sex)) + 
+  geom_ribbon(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
+  geom_smooth(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate+Est.Error, colour = sex)) +
+  geom_smooth(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
+  geom_smooth(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate))+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
   theme_bw() +
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-reg <- ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
-reg
+ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
+### save plot ##
+ggsave(filename ="figures/pogona.regression.pdf",   height = 10, width = 16)
 
 ############
-# dinsity plot pogona
+# density plots 
+# @dan yeah the SD plots here look pretty crap at +1SD
 ############
 # combinding data for plots
 SD.pog.mod.dat <- rbind(SD.pog.above, SD.pog.below, SD.pog.within) %>% 
