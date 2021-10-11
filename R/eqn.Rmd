@@ -30,7 +30,7 @@ V_{02}\ mL\ min^{-1}= \frac{\%O_{2} (V_{Chamber}- V_{lizard})}{\ t}
 $$
 Where the rate of O$_{2}$ is the maximum percentage of O$_{2}$ in a sample above that baseline; V$_{Chamber}$ is the volume of the chamber (B. duperreyi: 23.56 mL; P. vitticeps:251.33 mL); V$_{lizard}$ was calculated as an average between the prior and post chamber mass of each individual, and t is the duration of time in minutes between samples. The mass of each lizard was used as a proxy for its volume (1g = 1 ml) because of their high correlation and increased accuracy and precision in mismeasurements (Friesen et al., 2017). <p>
 *Statistical analysis*
-<p>All statistical analysis were conducted using the R environment, ver. 4.1.0 (www.r.-project.org). Bayesian linear mixed effect models from the package “brms” (Burkner, 2017) were used to analyze O2 data for each species. With our “brms” models, we used default priors and ran 4 MCMC chains of 2000 with a burn in of 1000 and a thinning interval of 1. All models were checked for proper mixing and convergence by visually inspecting trace plots. For each species we fit two models, the first that assumed homoscedasticity within the data and the second that accounted for heteroscedasticity within the data. The first model was fit using the following structure: 
+<p>All statistical analysis were conducted using the R environment, ver. 4.1.0 (www.r.-project.org). Bayesian linear mixed effect models from the package “brms” (Burkner, 2017) were used to analyze O2 data for each species. With our “brms” models, we used default priors and ran 4 MCMC chains of 5000 with a burn in of 1000 and a thinning interval of 5. All models were checked for proper mixing and convergence by visually inspecting trace plots. For each species we fit two models, the first that assumed homoscedasticity within the data and the second that accounted for heteroscedasticity within the data. The first model was fit using the following structure: 
 $$
 MR_{ijk} = \left ( \beta_{0} + id_{j} + d_{k}\right) + \left( \beta_{6} +  \beta_{id_{j}} \cdot time_{z} \right) + \beta_{1} \cdot Sex_{XXf} + \beta_{2} \cdot Sex_{XXm} + \beta_{3} \cdot log \ Mass_{sc} + \beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf} + \beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm} + e_{ijk}
 $$
@@ -95,7 +95,7 @@ HPDinterval(mcmc(bm_diff$samples$H1))
 pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
 ```
 # Results
-<p>*Bassiana duperreyi –* According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.2, SE=6.9). Determining if sex-reversed individuals (XXm) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, there was minimal overlap in slope differences in overall metabolic rate between XXm and concordant females (XXf). Whereas there was a high degree of overlap in slope differences in overall metabolic rates between concordant males (XYm) and XXm, suggesting support for like phenotype hypothesis for sex-reversed individuals (Fig. 2A; Table 1). When accounting for how metabolic rate varied across body mass and sex, there was further evidence for the like phenotype hypothesis. As mass increased the relationship in predicted metabolic rate for XXm and XYm were more similar and lower than XYf (Fig. 3A). There were no differences in body mass across sex class (p>0.05; Fig. 3A).<p>
+<p>*Bassiana duperreyi –* According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.2, SE=6.9). Determining if sex-reversed individuals (XXm) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, there was minimal overlap in slope differences in overall metabolic rate between XXm and concordant females (XXf). Whereas there was a high degree of overlap in slope differences in overall metabolic rates between concordant males (XYm) and XXm, suggesting support for like phenotype hypothesis for sex-reversed individuals (Fig. XX; Table 1). When accounting for how metabolic rate varied across body mass and sex, there was further evidence for the like phenotype hypothesis. As mass increased the relationship in predicted metabolic rate for XXm and XYm were more similar and lower than XYf (Fig. XX). There were no differences in body mass across sex class (p>0.05; Fig. XX).<p>
 ```{loo comparison, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
@@ -136,20 +136,21 @@ mcmc_areas(pog.dat,
            prob = 0.95, 
            prob_outer = 0.99, 
            point_est = "mean")+
-  theme_bw() +
-  theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
-  labs(y = TeX("Sex class"), x = "Slope") 
-
+  labs(y = TeX("Sex class"), x = "Slope")
 # contrast phenotype slopes
 pog.phenotype <- as.mcmc(ZWf - ZZf)
 mean(pog.phenotype)
 HPDinterval(pog.phenotype)
+hp<- hypothesis(Pog_m2_brms, "zlogMass + sexZZf:zlogMass = 0")
+plot(hp)
 # contrast genotype slopes 
 pog.genotype <- as.mcmc(ZZf - ZZm)
 mean(pog.genotype)
 HPDinterval(pog.genotype
-            
+hg <- hypothesis(Pog_m2_brms, "sexZZf:zlogMass + sexZZm:zlogMass = 0")
+plot(hg)
+
 ###### Body size comparison with BRMS model  ######  
 pog.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
 summary(pog.bodymass)
@@ -159,4 +160,4 @@ HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
 pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))      
 ```
-<p>*Pogona vitticeps -* According to loo values there was preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = XX, XX). Determining if sex-reversed individuals (ZZf) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, we found minimal overlap in slope differences in metabolic rate between ZZf and concordant males (ZZm). Whereas there was a high degree of overlap in slope differences in metabolic rate between concordant females (ZWf) and ZZf (Fig. 2B; Table 1), which indicated support for like phenotype hypothesis for sex-reversed individuals. These results were further supported when accounting for the relationship between body mass and sex. As mass increased, the predicted metabolic rate for ZWf and ZZf was more similar and higher than ZZm (Fig. 3B). We found no differences in body mass across sex class (F2, 131= 0.37, p>0.05; Figure 3B). <p>
+<p>*Pogona vitticeps -* According to loo values there was preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = XX, XX). Determining if sex-reversed individuals (ZZf) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, we found minimal overlap in slope differences in metabolic rate between ZZf and concordant males (ZZm). Whereas there was a high degree of overlap in slope differences in metabolic rate between concordant females (ZWf) and ZZf (Fig.XX ; Table XX), which indicated support for like phenotype hypothesis for sex-reversed individuals. These results were further supported when accounting for the relationship between body mass and sex. As mass increased, the predicted metabolic rate for ZWf and ZZf was more similar and higher than ZZm (Fig. XX). We found no differences in body mass across sex class (F2, 131= 0.37, p>0.05; Fig. XX). <p>

@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "gridExtra")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -70,23 +70,8 @@ mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogM
 # check residuals
 e <- residuals_brms(Bas_m1_brms, bassiana.data)
 hist(e)
-
-# extract posteriors
-post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
-
-post_meanXX_male_slope <- post_Bas_m1[,"b_zlogMass"] + 
-                          post_Bas_m1[,"b_sexXX_Male:zlogMass"]
-post_meanXY_male_slope <- post_Bas_m1[,"b_zlogMass"] + 
-                          post_Bas_m1[,"b_sexXY_Male:zlogMass"]
-
-# contarst slopes
-contrastSlope <- as.mcmc(post_meanXX_male_slope - post_meanXY_male_slope)
-mean(contrastSlope)
-HPDinterval(contrastSlope)
 #R2 of full model
 bayes_R2(Bas_m1_brms)
-# Model checks
-plot(post_Bas_m1)
 
 
 ##############
@@ -114,11 +99,9 @@ summary(Bas_m2_brms)
 draws <- as.array(Bas_m2_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
 
-# Check residuals. 
-plot(Bas_m2_brms)
+# Check residuals
 e <- residuals_brms(Bas_m2_brms, bassiana.data)
 hist(e)
-
 #R2 of full model
 bayes_R2(Bas_m2_brms)
 
@@ -127,11 +110,12 @@ bayes_R2(Bas_m2_brms)
 # Model comparison
 ####################
 # SE is large and difference is probably not sufficient to warrant a het model
+# going with Bas_m1_brms
 loo_compare(Bas_m1_brms, Bas_m2_brms)
 
 
 ####################  
-# extract posteriors for best model + Plotting 
+# extract posteriors for Bas_m1_brms model + Plotting 
 ####################
 post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
 dimnames(Bas_m1_brms)
@@ -142,7 +126,6 @@ XXm <- as.array(post_Bas_m1[,"b_zlogMass"] +
                 post_Bas_m1[,"b_sexXX_Male:zlogMass"])
 XYm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
                 post_Bas_m1[,"b_sexXY_Male:zlogMass"])
-
 bass.dat <- cbind(XXf, XXm, XYm)
 
 # plotting posteriors lot
@@ -157,18 +140,9 @@ mcmc_areas(bass.dat,
   labs(y = TeX("Sex class"), x = "Slope") 
 ggsave(filename ="figures/bassiana.mod2.posterior.pdf",  height = 5, width = 7)
 
-# contrast phenotype slopes
-bass.phenotype <- as.mcmc(XXm - XYm)
-mean(bass.phenotype)
-HPDinterval(bass.phenotype)
-
-# contrast genotype slopes 
-bass.genotype <- as.mcmc(XXf - XXm)
-mean(bass.genotype)
-HPDinterval(bass.genotype)
 
 ####################  
-# manual predict values for lines
+# manual predict values for regression lines
 ####################
 # XX females
 a_female <- post_Bas_m1$b_Intercept
@@ -196,7 +170,6 @@ Est.Error <- apply(y_XX_male, 2, function(x) sd(x))
 XXm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
   mutate(sex = "XX_Male")
 
-
 # XYm
 a_XY_male <- a_female + post_Bas_m1$b_sexXY_Male 
 b_XY_male <- b_mass_female + post_Bas_m1$`b_sexXY_Male:zlogMass`
@@ -208,59 +181,15 @@ Q97.5 <- apply(y_XY_male, 2, function(x) quantile(x, probs = 0.975))
 Est.Error <- apply(y_XY_male, 2, function(x) sd(x))
 XYm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
   mutate(sex = "XY_Male")
-
-# combind predicitions
+# combine predictions
 bass.mannual.pred <- rbind(XXf.man.pred, XXm.man.pred, XYm.man.pred)
-hist(XYm.man.pred$Estimate)
 
-####################
-# Sex predictions from Bas_m1_brms for regression ggplot
-####################
-#XY female 
-newdata_XY_female <- data.frame(sex = "XX_Female",
-                                 zlogMass = seq(-0.3856391, 0.3710889, 
-                                                length.out = 100),
-                                 ztime = 0, day = NA, id = NA) # If I understand this correctly, NA for day and id would choose an average deviation, so 0. This should allow you to use the re_formula in model predictions
-
-prXX_female <- data.frame(cbind(predict(Bas_m1_brms, 
-                                        newdata = newdata_XY_female,
-                                        summary = TRUE,
-                                        re.form = NA),
-                                zlogMass = newdata_XY_female$zlogMass))
-prXX_female <- prXX_female %>% 
-  mutate(sex = "XX_Female") 
-#XY male 
-newdata_XY_male <- data.frame(sex = "XY_Male",
-                              zlogMass = seq(-0.3856391, 0.3710889, 
-                                             length.out = 100),
-                              ztime = 0, day = NA, id = NA) 
-prXY_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata_XY_male,
-                                      summary = TRUE,
-                                      re_formula = NA), 
-                              zlogMass = newdata_XY_male$zlogMass))
-prXY_male <- prXY_male %>% 
-              mutate(sex = "XY_Male")
-#XX male
-newdata_XX_male <- data.frame(sex = "XX_Male",
-                              zlogMass = seq(-0.3856391, 0.3710889, 
-                                             length.out = 100),
-                              ztime = 0, day = NA, id = NA) 
-prXX_male <- data.frame(cbind(predict(Bas_m1_brms, 
-                                      newdata = newdata_XX_male), 
-                                      zlogMass=newdata_XX_male$zlogMass))
-prXX_male <- prXX_male %>% 
-              mutate(sex = "XX_Male")
-
-# setting up prediction data into one df 
-bass.mod.dat <- rbind(prXX_female, prXX_male, prXY_male) %>% 
-  group_by(sex)    
 
 ############## 
 # df for summarizing raw datapoints for ggplot 
 ############## 
 # add in the fitted value from the model.
 bassiana.data2<- data.frame(cbind(bassiana.data, predict(Bas_m1_brms)))
-
 #Summarise 
 bass.raw.summary <- bassiana.data2 %>% 
   group_by(day, id, sex) %>% 
@@ -279,7 +208,7 @@ bass.raw.summary <- bassiana.data2 %>%
 
 
 #############
-# test for differences in body mass
+# test for differences in body mass from raw data file
 #############
 bass.bodymass <- brm(zlogMass ~ sex , data = bass.raw.summary)
 saveRDS(bass.bodymass, "./models/Bas_bodymass")
@@ -287,7 +216,6 @@ summary(bass.bodymass)
 bm_diff <- hypothesis(bass.bodymass, 'sexXX_Male + sexXY_Male = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
-
 # p-value equivalent for the full hypothesis test. 
 pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))     
 
@@ -296,52 +224,55 @@ pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1
 # # Calculating 1SD above & below predicted values for density plots
 #############
 # 1sd and mean zlogmass values for seq
+# group by sex if this is what we want SD for each sex
 SD_2_values <- bassiana.data %>% 
-  group_by(sex) %>% 
+  mutate(max_mass = max(zlogMass),
+         min_mass =  min(zlogMass)) %>% 
   summarise(mean = mean(zlogMass),
             sd =  sd(zlogMass),
-            above = mean + sd,
-            below = mean - sd)
+            SD1_above = mean + sd,
+            SD1_below = mean - sd,
+            max_mass = unique(max_mass),
+            min_mass = unique(min_mass))
+
 ############
 #1SD above the mean
 ############
 # XX females
 newdata_XX_Female <- data.frame(sex = "XX_Female",
-                      zlogMass = seq(0.212, 0.3710889, length.out = 100),
+                      zlogMass = seq(0.1855218, 0.3710889, length.out = 100),
                       ztime = 0, day = NA, id = NA)
 
-prXX_female <- data.frame(cbind(predict(Bas_m2_brms, 
+prXX_female <- data.frame(cbind(predict(Bas_m1_brms, 
                                         newdata = newdata_XX_Female, 
                                         summary = TRUE), 
                                 zlogMass=newdata_XX_Female$zlogMass))
 
 XX_female_above <- prXX_female %>% 
-                    mutate(sex = "XX_Female",
-                           se = std.error(Estimate))
+                    mutate(sex = "XX_Female")
 
 ## XY male 
 newdata <- data.frame(sex = "XY_Male",
-                      zlogMass = seq(0.165, 0.3710889, length.out = 100),
+                      zlogMass = seq(0.1855218, 0.3710889, length.out = 100),
                       ztime = 0)
 
-prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXY_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE),
                               zlogMass=newdata$zlogMass))
 
 XY_male_above <- prXY_male %>% 
-  mutate(sex = "XY_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XY_Male")
+
 # XX male
 newdata <- data.frame(sex = "XX_Male", 
-                      zlogMass = seq(0.166, 0.3710889, length.out = 100),
+                      zlogMass = seq(0.1855218, 0.3710889, length.out = 100),
                       ztime = 0)
 
-prXX_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXX_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE),
                               zlogMass = newdata$zlogMass))
 XX_male_above <- prXX_male %>% 
-  mutate(sex = "XX_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XX_Male")
 
 SD.bass.above <- rbind(XX_male_above, XY_male_above, XX_female_above) %>% 
   mutate(test = "+1SD")
@@ -351,81 +282,74 @@ SD.bass.above <- rbind(XX_male_above, XY_male_above, XX_female_above) %>%
 ############
 # XX female
 newdata <- data.frame(sex = "XX_Female",
-                      zlogMass = seq(-0.3856391, 0.171, length.out = 100),
+                      zlogMass = seq(-0.3856391, -0.1855218, length.out = 100),
                       ztime = 0)
 
-prXX_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata,
+prXX_female <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata,
                                         re_formula = NA, summary = TRUE), 
                                 zlogMass=newdata$zlogMass))
 
 XX_female_below <- prXX_female %>% 
-  mutate(sex = "XX_Female", 
-         se = std.error(Estimate))
+  mutate(sex = "XX_Female")
 ## XY male 
 newdata <- data.frame(sex = "XY_Male",
-                      zlogMass = seq(-0.3856391, 0.156, length.out = 100),
+                      zlogMass = seq(-0.3856391, -0.1855218, length.out = 100),
                       ztime = 0)
 
-prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXY_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE),
                               zlogMass=newdata$zlogMass))
 XY_male_below <- prXY_male %>% 
-  mutate(sex = "XY_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XY_Male")
 # XX male
 newdata <- data.frame(sex = "XX_Male", 
-                      zlogMass = seq(-0.3856391, 0.228, length.out = 100),
+                      zlogMass = seq(-0.3856391, -0.1855218, length.out = 100),
                       ztime = 0)
 
-prXX_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXX_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE),
                               zlogMass=newdata$zlogMass))
 
 XX_male_below <- prXX_male %>% 
-  mutate(sex = "XX_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XX_Male")
 
 SD.bass.below <- rbind(XX_male_below, XY_male_below, XX_female_below) %>% 
   mutate(test = "-1SD")
 
 ############
 # MEAN 
-# @dan found a mistake here and changed the seq values to reflect the right ranges. This error explains the wonky density plots
 ############
 # XX female
 newdata <- data.frame(sex = "XX_Female",
-                      zlogMass = seq(-0.171, 0.212, length.out = 100),
+                      zlogMass = seq(-0.1855218, 0.1855218, length.out = 100),
                       ztime = 0)
 
-prXX_female <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXX_female <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                         re_formula = NA, summary = TRUE), 
                                 zlogMass=newdata$zlogMass))
 
 XX_female_within <- prXX_female %>% 
-  mutate(sex = "XX_Female", 
-         se = std.error(Estimate))
+  mutate(sex = "XX_Female")
 # XY male 
 newdata <- data.frame(sex = "XY_Male",
-                      zlogMass = seq(-0.156, 0.165, length.out = 100),
+                      zlogMass = seq(-0.1855218, 0.1855218, length.out = 100),
                       ztime = 0)
 
-prXY_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXY_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE),
                               zlogMass=newdata$zlogMass))
 XY_male_within <- prXY_male %>% 
-  mutate(sex = "XY_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XY_Male")
 # XX male
 newdata <- data.frame(sex = "XX_Male",
-                      zlogMass = seq(-0.228, 0.166, length.out = 100),
+                      zlogMass = seq(-0.1855218, 0.1855218, length.out = 100),
                       ztime = 0)
 
-prXX_male <- data.frame(cbind(predict(Bas_m2_brms, newdata = newdata, 
+prXX_male <- data.frame(cbind(predict(Bas_m1_brms, newdata = newdata, 
                                       re_formula = NA, summary = TRUE), 
                               zlogMass=newdata$zlogMass))
 XX_male_within <- prXX_male %>% 
-  mutate(sex = "XX_Male",
-         se = std.error(Estimate))
+  mutate(sex = "XX_Male")
 
 SD.bass.within <- rbind(XX_male_within, XY_male_within, XX_female_within) %>% 
   mutate(test = "Mean")
@@ -451,9 +375,7 @@ p<-  ggplot(data =bassiana.data2 , aes(zlogMass, Estimate, group = sex, color= s
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
-### save plot ##
-ggsave(filename ="figures/bassiana.mod2.regression.pdf",   height = 10, width = 16)
+reg.plot <- ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
 
 ############
 # density plot of regression +- SD of mean for bassiana
@@ -461,10 +383,11 @@ ggsave(filename ="figures/bassiana.mod2.regression.pdf",   height = 10, width = 
 # combining data for plots
 SD.bass.mod.dat <- rbind(SD.bass.above, SD.bass.below, SD.bass.within) %>% 
   group_by(test, sex)
+saveRDS(SD.bass.mod.dat, "final.analysis.data/Bassiana.SD.mod.dat.RDS")
 # SD Plot
 SD.bass.mod.dat$test <- factor(SD.bass.mod.dat$test, levels = c("+1SD", "Mean", "-1SD"))
 mycolors <- c("#333333", "#990000", "#3399FF")
-ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
+sd.plot <- ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   geom_density(alpha = .4) +
   scale_fill_manual(values = mycolors, guide = FALSE)+
   facet_grid(test~., scales = "free", switch="y")+
@@ -473,15 +396,12 @@ ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   scale_x_continuous(name="Predicted Mean Metabolic Rate", breaks = seq (-5.3, -3.9, by=0.3), limits=c(-5.3, -3.9))+
   theme_bw()
 
-# save plot
-ggsave(filename ="figures/bassiana.mod2.density.plot.pdf",   height = 10, width = 16)
-
-
+# combind plots
+grid.arrange(reg.plot,sd.plot, ncol = 2)
 
 ####################################
 ######### Pogona  O2 data  ######### 
 ####################################
-
 #########
 #Load data
 ########
@@ -526,14 +446,20 @@ if(rerun1){
   Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo"))
   saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 } else {Pog_m1_brms <- readRDS("./models/Pog_m1_brms")}
-summary(Pog_m1_brms)
 
+
+# model checks
 # checking lags for this model, 
-# looks much better after increasing thinning and iterations  
+#@dan looks much better after increasing thinning and iterations  
+summary(Pog_m1_brms)
 draws <- as.array(Pog_m1_brms)
 mcmc_acf(draws,  pars = c("b_Intercept", "b_sexZZf", "b_sexZZm"), lags =10)
+#R2 of full model
+bayes_R2(Pog_m1_brms)
 
-# check residuals
+####################
+# Checking residuals
+####################
 e <- residuals_brms(Pog_m1_brms, pogona.data)
 hist(e)
 
@@ -554,14 +480,13 @@ if(rerun2){
   Pog_m2_brms <- readRDS(file = "./models/Pog_m2_brms")
 }
 
+# Model checks
 # checking lags for this model, looks much better after increasing thinning and iterations  
 draws <- as.array(Pog_m2_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexZZf", "b_sexZZm"), lags =10)
-
-# Model checks
+# other checks
 plot(Pog_m2_brms)
 summary(Pog_m2_brms)
-
 #R2 of full model
 bayes_R2(Pog_m2_brms)
 
@@ -577,7 +502,7 @@ hist(e)
 loo_compare(Pog_m2_brms,Pog_m1_brms)
 
 ####################  
-# extract posteriors for best model + Plotting 
+# extract posteriors for Pog_m2  + Plotting 
 ####################
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
 Pog_m2_brms
@@ -602,17 +527,6 @@ mcmc_areas(pog.dat,
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope") 
-ggsave(filename ="figures/Pogona.mod2.posterior.pdf",  height = 5, width = 7)
-
-# contrast phenotype slopes
-pog.phenotype <- as.mcmc(ZWf - ZZf)
-mean(pog.phenotype)
-HPDinterval(pog.phenotype)
-
-# contrast genotype slopes 
-pog.genotype <- as.mcmc(ZZf - ZZm)
-mean(pog.genotype)
-HPDinterval(pog.genotype)
 
 
 ####################  
@@ -621,7 +535,7 @@ HPDinterval(pog.genotype)
 # ZW females
 a_female <- post_pog_m2$b_Intercept
 b_mass_female <- post_pog_m2$b_zlogMass
-zlogMass = seq(-0.5029249, 1.23776, 
+zlogMass = seq(-0.5015452, 1.262014, 
                length.out = 100)
 y_female <- a_female + b_mass_female %*% t(zlogMass)
 colnames(y_female) <- zlogMass
@@ -644,7 +558,6 @@ Est.Error <- apply(y_ZZ_female, 2, function(x) sd(x))
 ZZf.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
   mutate(sex = "ZZf")
 
-
 # ZZm
 a_ZZ_male <- a_female + post_pog_m2$b_sexZZm 
 b_ZZ_male <- b_mass_female + post_pog_m2$`b_sexZZm:zlogMass`
@@ -656,43 +569,8 @@ Q97.5 <- apply(y_ZZ_male, 2, function(x) quantile(x, probs = 0.975))
 Est.Error <- apply(y_ZZ_male, 2, function(x) sd(x))
 ZZm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
   mutate(sex = "ZZm")
-
 # combined predictions
 pog.mannual.pred <- rbind(ZZm.man.pred, ZZf.man.pred, ZWf.man.pred)
-
-####################
-# Predictions using predict function - ERRORS seem like prediction intervals; check posterior_epred()
-####################
-#ZW female
-newdata <- data.frame(
-  sex = "ZWf",
-  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
-  ztime = 0)
-prZWf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
-prZWf <- prZWf %>% 
-  mutate(sex = "ZWf",
-         se = std.error(Estimate))
-#ZZ male 
-newdata <- data.frame(
-  sex = "ZZm",
-  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
-  ztime = 0)
-prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
-prZZm <- prZZm %>% 
-  mutate(sex = "ZZm", 
-         se = std.error(Estimate))
-#ZZ females
-newdata <- data.frame(
-  sex = "ZZf",
-  zlogMass = seq(-0.5029249, 1.23776, length.out = 100),
-  ztime = 0)
-prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
-prZZf <- prZZf %>% 
-  mutate(sex = "ZZf", 
-         se = std.error(Estimate))
-# setting up prediction data into one df
-mod.pog.dat <- rbind(prZWf, prZZm, prZZf) %>% 
-  group_by(sex)
 
 
 ############## 
@@ -728,7 +606,6 @@ summary(pog.bodymass)
 bm_diff <- hypothesis(bodymass, 'sexZZf + sexZZm = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
-
 # p-value equivalent for the full hypothesis test. 
 pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
 
@@ -739,11 +616,15 @@ pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1
 #############
 # 1sd and mean zlogmass values for seq
 Pog_SD_2_values <- pogona.data %>% 
-  group_by(sex) %>% 
+  ungroup() %>% 
+  mutate(max_mass = max(zlogMass),
+         min_mass =  min(zlogMass)) %>% 
   summarise(mean = mean(zlogMass),
             sd =  sd(zlogMass),
-            above = mean + sd,
-            below = mean - sd)
+            SD1_above = mean + sd,
+            SD1_below = mean - sd,
+            max_mass = unique(max_mass),
+            min_mass = unique(min_mass))
 
 ############
 #1SD above the mean
@@ -751,62 +632,57 @@ Pog_SD_2_values <- pogona.data %>%
 # ZWf
 newdata <- data.frame(
   sex = "ZWf",
-  zlogMass = seq(0.331, 1.23776, length.out = 100),
+  zlogMass = seq(0.331, 1.26, length.out = 100),
   ztime = 0)
 prZWf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZWf_above <- prZWf %>% 
-  mutate(sex = "ZWf", 
-         se = std.error(Estimate))
+  mutate(sex = "ZWf")
 ## ZZm 
 newdata <- data.frame(
   sex = "ZZm",
-  zlogMass = seq(0.275, 1.23776, length.out = 100),
+  zlogMass = seq(0.331, 1.26, length.out = 100),
   ztime = 0)
 prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZm_above <- prZZm %>% 
-  mutate(sex = "ZZm",
-         se = std.error(Estimate))
+  mutate(sex = "ZZm")
 # ZZf
 newdata <- data.frame(
   sex = "ZZf",
-  zlogMass = seq(0.305, 1.23776, length.out = 100),
+  zlogMass = seq(0.331, 1.26, length.out = 100),
   ztime = 0)
 prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZf_above <- prZZf %>% 
-  mutate(sex = "ZZf",
-         se = std.error(Estimate))
+  mutate(sex = "ZZf")
 SD.pog.above <- rbind(ZWf_above, ZZm_above, ZZf_above) %>% 
   mutate(test = "+1SD")
+
 ############
 #1SD below the mean
 ############
 # ZWf
 newdata <- data.frame(
   sex = "ZWf",
-  zlogMass = seq(-0.5029249, -0.331, length.out = 100),
+  zlogMass = seq( -0.502, -0.301, length.out = 100),
   ztime = 0)
 prZWf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZWf_below <- prZWf %>% 
-  mutate(sex = "ZWf", 
-         se = std.error(Estimate))
+  mutate(sex = "ZWf")
 ## ZZm 
 newdata <- data.frame(
   sex = "ZZm",
-  zlogMass = seq(-0.5029249, -0.275, length.out = 100),
+  zlogMass = seq(-0.502, -0.301, length.out = 100),
   ztime = 0)
 prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZm_below <- prZZm %>% 
-  mutate(sex = "ZZm",
-         se = std.error(Estimate))
+  mutate(sex = "ZZm")
 # ZZf
 newdata <- data.frame(
   sex = "ZZf",
-  zlogMass = seq(-0.5029249, -0.305, length.out = 100),
+  zlogMass = seq(-0.502, -0.301, length.out = 100),
   ztime = 0)
 prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZf_below <- prZZf %>% 
-  mutate(sex = "ZZf",
-         se = std.error(Estimate))
+  mutate(sex = "ZZf")
 SD.pog.below <- rbind(ZWf_below, ZZm_below, ZZf_below) %>% 
   mutate(test = "-1SD")
 ############
@@ -819,26 +695,23 @@ newdata <- data.frame(
   ztime = 0)
 prZWf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZWf_within <- prZWf %>% 
-  mutate(sex = "ZWf", 
-         se = std.error(Estimate))
+  mutate(sex = "ZWf")
 ## ZZm 
 newdata <- data.frame(
   sex = "ZZm",
-  zlogMass = seq(-0.275, 0.275, length.out = 100),
+  zlogMass = seq(-0.331, 0.331, length.out = 100),
   ztime = 0)
 prZZm <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZm_within <- prZZm %>% 
-  mutate(sex = "ZZm",
-         se = std.error(Estimate))
+  mutate(sex = "ZZm")
 # ZZf
 newdata <- data.frame(
   sex = "ZZf",
-  zlogMass = seq(-0.305, 0.305, length.out = 100),
+  zlogMass = seq(-0.331, 0.331, length.out = 100),
   ztime = 0)
 prZZf <- data.frame(cbind(predict(Pog_m2_brms, newdata = newdata, re_formula = NA, summary = TRUE), zlogMass=newdata$zlogMass))
 ZZf_within <- prZZf %>% 
-  mutate(sex = "ZZf",
-         se = std.error(Estimate))
+  mutate(sex = "ZZf")
 SD.pog.within <- rbind(ZWf_within, ZZf_within, ZZm_within) %>% 
   mutate(test = "Mean")
 
@@ -862,9 +735,7 @@ p<-  ggplot(data =pogona.data2 , aes(zlogMass, Estimate, group = sex, color= sex
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
-ggExtra::ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
-### save plot ##
-ggsave(filename ="figures/pogona.regression.pdf",   height = 10, width = 16)
+reg.plot<-ggMarginal(p, margins = "x", groupColour = TRUE, groupFill = TRUE)
 
 ############
 # density plots 
@@ -873,15 +744,17 @@ ggsave(filename ="figures/pogona.regression.pdf",   height = 10, width = 16)
 # combinding data for plots
 SD.pog.mod.dat <- rbind(SD.pog.above, SD.pog.below, SD.pog.within) %>% 
   group_by(test, sex)
+saveRDS(SD.pog.mod.dat, "final.analysis.data/PogonaSD.mod.dat.RDS")
 SD.pog.mod.dat$test <- factor(SD.pog.mod.dat$test, levels = c("+1SD", "Mean", "-1SD"))
 mycolors <- c("#333333", "#990000", "#3399FF")
-ggplot(SD.pog.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
+sd.plot <- ggplot(SD.pog.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   geom_density(alpha = .4) +
   scale_fill_manual(values = mycolors, guide = FALSE)+
-  facet_grid(test~., switch="y")+
+  facet_grid(test~., switch="y", scales="free_y")+
   scale_y_continuous(position = "right")+
   scale_x_continuous(name="Predicted Mean Metabolic Rate", breaks = seq (-3,0, by=0.5), limits = c(-3,0))+
   theme_bw()
 
-# save plot
-ggsave(filename ="figures/pog.mod2.density.plot.pdf",   height = 10, width = 16)
+# combined figure
+grid.arrange(reg.plot,sd.plot, ncol = 2)
+
