@@ -279,9 +279,10 @@ bass.raw.summary <- bassiana.data2 %>%
 #############
 # test for differences in body mass
 #############
-bodymass <- brm(zlogMass ~ sex , data = bass.raw.summary)
-summary(bodymass)
-bm_diff <- hypothesis(bodymass, 'sexXX_Male + sexXY_Male = 0')
+bass.bodymass <- brm(zlogMass ~ sex , data = bass.raw.summary)
+saveRDS(bass.bodymass, "./models/Bas_bodymass")
+summary(bass.bodymass)
+bm_diff <- hypothesis(bass.bodymass, 'sexXX_Male + sexXY_Male = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
 
@@ -574,6 +575,7 @@ loo_compare(Pog_m2_brms,Pog_m1_brms)
 # extract posteriors for best model + Plotting 
 ####################
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
+Pog_m2_brms
 dimnames(post_pog_m2)
 
 # extracting posteriors 
@@ -654,7 +656,7 @@ ZZm.man.pred <- data.frame(zlogMass, Estimate, Est.Error, Q2.5, Q97.5)%>%
 pog.mannual.pred <- rbind(ZZm.man.pred, ZZf.man.pred, ZWf.man.pred)
 
 ####################
-# Predictions from best model for plots
+# Predictions using predict function - ERRORS seem like prediction intervals; check posterior_epred()
 ####################
 #ZW female
 newdata <- data.frame(
@@ -715,8 +717,9 @@ pogona.raw.summary <- pogona.data %>%
 #############
 # test for differences in body mass
 #############
-bodymass <- brm(zlogMass ~ sex , data = pogona.raw.summary)
-summary(bodymass)
+pog.bodymass <- brm(zlogMass ~ sex , data = pogona.raw.summary)
+saveRDS(pog.bodymass, "./models/Pog_bodymass")
+summary(pog.bodymass)
 bm_diff <- hypothesis(bodymass, 'sexZZf + sexZZm = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
