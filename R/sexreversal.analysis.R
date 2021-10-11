@@ -62,7 +62,8 @@ if(rerun1){
 } else {Bas_m1_brms <- readRDS("./models/Bas_m1_brms")}
 summary(Bas_m1_brms)
 
-# checking lags for this model, looks much better after increasing thinning and iterations  
+# checking lags for this model 
+# @dan looks  better after increasing thinning and iterations  
 draws <- as.array(Bas_m1_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
 
@@ -108,7 +109,8 @@ if(rerun2){
 plot(Bas_m2_brms)
 summary(Bas_m2_brms)
 
-# checking lags for this model, looks much better after increasing thinning and iterations  
+# checking lags for this model
+# @ dan looks much better after increasing thinning and iterations  
 draws <- as.array(Bas_m2_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
 
@@ -511,22 +513,25 @@ fig
 
 
 ##############
-## Model 1 @dan control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 4000
+## Model 1 @dan control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
 ##############
 rerun1=FALSE
 if(rerun1){
   
   suppressMessages(
     Pog_m1_brms <- brm(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
-                       family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
+                       family = "gaussian", data = pogona.data, iter= 5000, warmup = 1000, 
                        thin = 5, cores = 4))
     # @dan got a warning about our waic values and it suggested to add moment_match = TRUE 
-  Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo", "waic"), moment_match = TRUE)
+  Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo"))
   saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 } else {Pog_m1_brms <- readRDS("./models/Pog_m1_brms")}
 summary(Pog_m1_brms)
 
-
+# checking lags for this model, 
+# looks much better after increasing thinning and iterations  
+draws <- as.array(Pog_m1_brms)
+mcmc_acf(draws,  pars = c("b_Intercept", "b_sexZZf", "b_sexZZm"), lags =10)
 
 # check residuals
 e <- residuals_brms(Pog_m1_brms, pogona.data)
@@ -534,15 +539,15 @@ hist(e)
 
 
 ##############
-## Model 2 @ dan same as above, control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 4000
+## Model 2 @ dan same as above, control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
 ##############
 rerun2=FALSE
 if(rerun2){
   mod <- bf(log(O2_min) ~ sex*zlogMass + ztime + (1 + ztime | id) + (1 | day),  
             sigma ~ zlogMass + ztime)
-  Pog_m2_brms <- brm(mod, family = "gaussian", data = pogona.data, iter= 4000, warmup = 1000, 
+  Pog_m2_brms <- brm(mod, family = "gaussian", data = pogona.data, iter= 5000, warmup = 1000, 
                      thin = 5, cores = 4)
-  Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo", "waic"), moment_match = TRUE)
+  Pog_m2_brms <- add_criterion(Pog_m2_brms, c("loo"))
   saveRDS(Pog_m2_brms, "./models/Pog_m2_brms")
 } else {
   # read file in
@@ -551,7 +556,7 @@ if(rerun2){
 
 # checking lags for this model, looks much better after increasing thinning and iterations  
 draws <- as.array(Pog_m2_brms)
-mcmc_acf(draws,  pars = c("b_Intercept"), lags =10)
+mcmc_acf(draws,  pars = c("b_Intercept","b_sexZZf", "b_sexZZm"), lags =10)
 
 # Model checks
 plot(Pog_m2_brms)
