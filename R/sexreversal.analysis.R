@@ -3,7 +3,7 @@
 ################################################### 
 
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "gridExtra")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "gridExtra", "cowplot")
 
 #####################################
 ######### Bassiana  O2 data #########
@@ -112,7 +112,7 @@ bayes_R2(Bas_m2_brms)
 # SE is large and difference is probably not sufficient to warrant a het model
 # going with Bas_m1_brms
 loo_compare(Bas_m1_brms, Bas_m2_brms)
-
+tab_model(Bas_m1_brms, file = "R/Figs/Bas_m1_brms_table.html")
 
 ####################  
 # extract posteriors for Bas_m1_brms model + Plotting 
@@ -371,6 +371,7 @@ p<-  ggplot(data =bassiana.data2 , aes(zlogMass, Estimate, group = sex, color= s
   geom_smooth(data = bass.mannual.pred, aes(x=zlogMass, y=Estimate))+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
+  labs(tag = "A")+
   theme_bw() +
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
@@ -397,7 +398,7 @@ sd.plot <- ggplot(SD.bass.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   theme_bw()
 
 # combind plots
-grid.arrange(reg.plot,sd.plot, ncol = 2)
+bassiana.final.fig <- plot_grid(reg.plot,sd.plot, ncol = 2)
 
 ####################################
 ######### Pogona  O2 data  ######### 
@@ -500,8 +501,9 @@ hist(e)
 # Model comparison
 ####################
 loo_compare(Pog_m2_brms,Pog_m1_brms)
+tab_model(Pog_m2_brms, file = "R/Figs/Pog_m2_brms_table.html")
 
-####################  
+ ####################  
 # extract posteriors for Pog_m2  + Plotting 
 ####################
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
@@ -718,9 +720,9 @@ SD.pog.within <- rbind(ZWf_within, ZZf_within, ZZm_within) %>%
 ####################
 # All Pogona Plots
 ####################
+# color
 mycolors <- c("#333333", "#990000", "#3399FF")
-
-p<-  ggplot(data =pogona.data2 , aes(zlogMass, Estimate, group = sex, color= sex )) +
+p<-  ggplot(data =pogona.data2 , aes(zlogMass, Estimate, group = sex, color= sex ))+
   # Add in the predicted data given each rows data. 
   geom_point(alpha =.3)+
   # Now add in the model predictions
@@ -731,6 +733,7 @@ p<-  ggplot(data =pogona.data2 , aes(zlogMass, Estimate, group = sex, color= sex
   geom_smooth(data = pog.mannual.pred, aes(x=zlogMass, y=Estimate))+
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
+  labs(tag = "B")+
   theme_bw() +
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold'))+
@@ -756,5 +759,7 @@ sd.plot <- ggplot(SD.pog.mod.dat, aes(x=Estimate, group = sex, fill = sex)) +
   theme_bw()
 
 # combined figure
-grid.arrange(reg.plot,sd.plot, ncol = 2)
+pogona.final.fig <- plot_grid(reg.plot,sd.plot, ncol = 2)
 
+#combined pogona and bassiana figure:
+grid.arrange(bassiana.final.fig, pogona.final.fig, nrow = 2)

@@ -15,7 +15,6 @@ knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
 # Packages
 pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
 ```
-
 # Materials and methods
 *Lizard collection and husbandry* 
 <p>*Bassiana duperreyi –* The eastern three-lined skink, is an oviparous lizard that is a communal nester at cool high elevational populations (Shine et al. 2002). On 21 November 2020, a total of 25 nests and 100 eggs were opportunistically located by flipping rocks, logs, and other cover objects at two field locations within the Brindabella Range (Mount Ginini - 1640 m a.s.l., 35°31'29.6"S 148°46'58.7"E; Piccadilly Circus - 1240 m a.s.l., 35°21'42.0"S 148°48'12.5"E). These sites were selected because of prior work that documented high frequencies of sex reversal occurring within populations (Shine 2002; Dissanayake et al., 2021). At each nest, the number of eggs was documented and temperature dataloggers (iButton® model DS1921G, Maxim Integrated, San Jose, CA, USA; accuracy $\pm$ °C from -30°C to +70°C; diameter 17 mm, height 6.2 mm, mass 3.2 g) were placed at the core of each nest to monitor nest temperatures in order to determine developmental rates. Using mean nest temperatures at each location (Mount Ginini [20.42°C $\pm$  SD 0.84] & Piccadilly Circus [18.94°C $\pm$ SD 0.98]; Dissanayake et al., in review), we allowed each nest to be exposed in natural conditions for 9-10 weeks at which ensured approximately 90% of the development period (Shine et al. 2002). Eggs were then collected and placed in moist vermiculite (water potential – 200kPa). Eggs were transported back to University of Canberra where they were placed in incubators that maintained 23°C, which the null expectation is 50% males (Shine et al., 2002). While in incubators, eggs were gently rotated every couple of days, and hatchlings were removed as soon as they emerged from the egg. See Dissanayake et al., in review for detail on discerption of study sites and general egg collection. Once hatchlings emerged, phenotypic sex was determined by squeezing the tail base to manfully evert hemipenes (Harlow, 1996). Tail tips (4-5 mm) were removed with a sterile blade and tail tips were collected into labeled 1.5 ml tubes containing 90% ethanol and remaining blood from tail was collected on Whatman FTATM Elute Micro Card/CAT No. WB120410. Lizards were then housed individually in plastic containers (0.35x0.25x0.15m) for a minimum of 2 weeks until respirometry experiments.<p>
@@ -23,8 +22,8 @@ pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmer
 *Genotyping*
 <p>Genotypic sex for both *B. duperreyi* and *P. vitticeps*, was determined using a polymerase chain reaction (PCR)-based molecular sex test from extracted DNA collected from tail tips or Whatman FTATM Elute Micro Card. DNA was extracted from tissue samples following the manufacturer protocols. DNA purity was determined using a NanoDrop 1000 spectrophotometer (NanoDrop Technologies Inc., Wilmington, DE, USA) and quantified using the Qubit 2.0 Fluorometric Quantitation (Invitrogen, Life technologies, Sydney, N.S.W., Australia). For *B. duperreyi* we tested for sex reversal using PCR as described by Quinn et al. (2009), where the genotypic sex was identified based off Y-specific markers allowing identification of XX and XY samples.  No XY females were observed, another indication that recombination and/or mutation involving these loci is negligible and has not affected the accuracy of genotypic sex assignment. Genotypic sex (ZZ/ZW) for *P. vitticeps*, was determined using a PCR based molecular sex test that amplifies a W-chromosome-specific size polymorphism (Holleley et al., 2015) using sex linked markers identified by Quinn et al. (2007). Two bands amplify in ZW individuals (identifying the presence of the W chromosome), whereas a single control band amplifies in ZZ individuals. All PCR products were visualized on a 1.5% agarose gel using SYBR Safe (Life Technologies, Carlsbad, USA), and all molecular sex tests were conducted blind to the phenotypic sex of the individuals. For both *B. duperreyi* and *P. vitticeps*, animals showing genotype–phenotype discordance were classified as sex-reversed (Shine et al., 2002; Holleley et al., 2015).<p>
 *Respirometry*
-<p>Standard metabolic rate (SMR) was defined as the average O$_{2}$ produced by an individual produced during the duration of each sampling period. A flow-through respirometry system was used to measure SMR of O$_{2}$ production (V̇O$_{2}$, mL min−1) with a stable systems FMS (Sables System FMS (Las Vegas NV, USA). A gas analyser sub-sampler pump was used to pump outside air scrubbed of CO$_{2}$ (using soda lime, Chem-Supply, LOCATION) and water vapour (using Drierite, W. A. Hammond Drierite Co. Ltd, LOCATION) to a mass flow controller that regulated flow rate to a nominal value of 130 ml min−1 (*B. duperreyi*) or 250 ml min$^{-1}$ (*P. vitticeps*). After passing through the mass flow controller, air was pushed through an airtight cylindrical respirometry chamber, which dimensions were designed specifically for each species (*B. duperreyi*: 75x20mm; *P. vitticeps*:200x40mm). Once air was pushed through chambers, it was then pushed to a flow meter which insured flow rates were constant. Air was then rescrubbed of water vapor (using Drierite) before being passed through a H2O analyser, CO$_{2}$, and O$_{2}$ gas analysers. The fractional concentration of O$_{2}$ in the ex-current air (FEO$_{2}$) was recorded at a frequency of 1 Hz. Following the manufacture protocols, both CO$_{2}$ and O$_{2}$ analysers were calibrated prior to experiments. <p>
-<p>To ensure lizards are at a postabsorptive state, lizards were fasted for a minimum 24 hours prior to respirometry measurements. Body mass of each lizard was measured to 0.01g using a digital sale (Ohaus SP-202) before and after being placed in respirometry chambers. Two incubators (LabWit, ZXSDR1090) were used to precisely control outside air being pulled into the respirometry system and another to control the temperature where chambers were placed for measurements taken for experiments ($\pm$ 0.01°C). Once lizards were placed in chambers, they were then placed inside incubators in the dark for approximately 12-14h beginning around dusk. Incubator temperatures held a constant temperature which was within the mean field body temperatures for each species, 34°C for *B. duperreyi* (Du et al., 2010) and 33°C *P. vitticeps* (Wild et al., in prep). Over a 65 min period each individual was measured at least once continuously for 5 min, with a control/baseline air sample immediately taken. To ensure animals were acclimated within chambers, the first 2 h of data was discarded from analysis. Output peaks of O$_{2}$ were identified using the R package “metabR” (github.com/daniel1noble/metabR) to calculate percentage of O$_{2}$ above baseline sample. The rate of O$_{2}$ produced by an individual was calculated following (Lighton 2008): 
+<p>Standard metabolic rate (SMR) was defined as the average O$_{2}$ produced by an individual produced during the duration of each sampling period. A flow-through respirometry system was used to measure SMR of O$_{2}$ production (V̇O$_{2}$, mL min−1) with a stable systems FMS (Sables System FMS (Las Vegas NV, USA). A gas analyser sub-sampler pump was used to pump outside air scrubbed of CO$_{2}$ (using soda lime, Chem-Supply, **LOCATION**) and water vapour (using Drierite, W. A. Hammond Drierite Co. Ltd, **LOCATION**) to a mass flow controller that regulated flow rate to a nominal value of 130 ml min−1 (*B. duperreyi*) or 250 ml min$^{-1}$ (*P. vitticeps*). After passing through the mass flow controller, air was pushed through an airtight cylindrical respirometry chamber, which dimensions were designed specifically for each species (*B. duperreyi*: 75x20mm; *P. vitticeps*:200x40mm). Once air was pushed through chambers, it was then pushed to a flow meter which insured flow rates were constant. Air was then rescrubbed of water vapor (using Drierite) before being passed through a H2O analyser, CO$_{2}$, and O$_{2}$ gas analysers. The fractional concentration of O$_{2}$ in the ex-current air (FEO$_{2}$) was recorded at a frequency of 1 Hz. Following the manufacture protocols, both CO$_{2}$ and O$_{2}$ analysers were calibrated prior to experiments. <p>
+<p>To ensure lizards are at a postabsorptive state, lizards were fasted for a minimum 24 hours prior to respirometry measurements. Body mass of each lizard was measured to 0.01g using a digital sale (Ohaus SP-202) before and after being placed in respirometry chambers. Two incubators (LabWit, ZXSDR1090) were used to precisely control outside air being pulled into the respirometry system and another to control the temperature where chambers were placed for measurements taken for experiments ($\pm$ 0.01°C). Once lizards were placed in chambers, they were then placed inside incubators in the dark for approximately 12-14h beginning around dusk. Incubator temperatures held a constant temperature which was within the mean field body temperatures for each species, 34°C for *B. duperreyi* (Du et al., 2010) and 33°C *P. vitticeps* (Wild et al., *in prep*). Over a 65 min period each individual was measured at least once continuously for 5 min, with a control/baseline air sample immediately taken. To ensure animals were acclimated within chambers, the first 2 h of data was discarded from analysis. Output peaks of O$_{2}$ were identified using the R package “metabR” (github.com/daniel1noble/metabR) to calculate percentage of O$_{2}$ above baseline sample. The rate of O$_{2}$ produced by an individual was calculated following (Lighton 2008): 
 $$
 V_{02}\ mL\ min^{-1}= \frac{\%O_{2} (V_{Chamber}- V_{lizard})}{\ t} 
 $$
@@ -32,10 +31,11 @@ Where the rate of O$_{2}$ is the maximum percentage of O$_{2}$ in a sample above
 *Statistical analysis*
 <p>All statistical analysis were conducted using the R environment, ver. 4.1.0 (www.r.-project.org). Bayesian linear mixed effect models from the package “brms” (Burkner, 2017) were used to analyze O2 data for each species. With our “brms” models, we used default priors and ran 4 MCMC chains of 5000 with a burn in of 1000 and a thinning interval of 5. All models were checked for proper mixing and convergence by visually inspecting trace plots. For each species we fit two models, the first that assumed homoscedasticity within the data and the second that accounted for heteroscedasticity within the data. The first model was fit using the following structure: 
 $$
-MR_{ijk} = \left ( \beta_{0} + id_{j} + d_{k}\right) + \left( \beta_{6} +  \beta_{id_{j}} \cdot time_{z} \right) + \beta_{1} \cdot Sex_{XXf} + \beta_{2} \cdot Sex_{XXm} + \beta_{3} \cdot log \ Mass_{sc} + \beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf} + \beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm} + e_{ijk}
+MR_{ijk} = \left ( \beta_{0} + id_{j} + d_{k}\right) + \left( \beta_{6} +  \beta_{id_{j}} \cdot time_{z} \right) + \beta_{1} \cdot Sex_{XXf} + \beta_{2} \cdot Sex_{XYm} + \beta_{3} \cdot log \ Mass_{sc} + \beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf} + \beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XYm} + e_{ijk}
 $$
-Where $MR_{ijk}$ is the metabolic rate ($log\ VO_2 \cdot mL^{-1} \cdot min^{-1}$) for measurement *i* (i = 1 to $N_{m}$, number of measurements) on individual *j* (j = 1 to $N_{id}$, number of individuals) and day *k* (k = 1 to $N_{d}$, number of days).  We estimated a linear slope ($\beta_{6}$) for measurement time ($time_{z}$, z-transformed); a linear slope for log transformed mass ($log \ Mass_{sc}$, centered on mean, sc) and contrasts for the difference sex classes ($\beta_{1}-\beta_{2}$), where $Sex_{XXf}$ and $Sex_{XXm}$ are for true sex and sex reversed animals, respectively. We also estimated different mass scaling relationships for the different sex classes (i.e., $\beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf}$ and  $\beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm}$, respectively). We included a random intercept ($id_{j}$) and slope for $time_{z}$ ($\beta_{id_{ij}}$) for individual *j* across measurement occations. Deviations were sampled from a multivariate normal distribution (~$MVN \left( [0,0], ID \right)$, where **ID** is a (co)variance matrix with a random intercept and slope variance and their covariance). We also included a random day effect ($d_{k}$) (~ $N\left( 0, \sigma^2_{k}\right)$). <p>
-```{body size, loo comparison, echo=FALSE, message=FALSE, warning=FALSE}
+Where $MR_{ijk}$ is the metabolic rate ($log\ VO_2 \cdot mL^{-1} \cdot min^{-1}$) for measurement *i* (i = 1 to $N_{m}$, number of measurements) on individual *j* (j = 1 to $N_{id}$, number of individuals) and day *k* (k = 1 to $N_{d}$, number of days).  We estimated a linear slope ($\beta_{6}$) for measurement time ($time_{z}$, z-transformed); a linear slope for log transformed mass ($log \ Mass_{sc}$, centered on mean, sc) and contrasts for the difference sex classes ($\beta_{1}-\beta_{2}$), where $Sex_{XXf}$ and $Sex_{XYm}$ are for true sex and sex reversed animals, respectively. We also estimated different mass scaling relationships for the different sex classes (i.e., $\beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf}$ and  $\beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm}$, respectively). We included a random intercept ($id_{j}$) and slope for $time_{z}$ ($\beta_{id_{ij}}$) for individual *j* across measurement occations. Deviations were sampled from a multivariate normal distribution (~$MVN \left( [0,0], ID \right)$, where **ID** is a (co)variance matrix with a random intercept and slope variance and their covariance). We also included a random day effect ($d_{k}$) (~ $N\left( 0, \sigma^2_{k}\right)$). <p>
+# Results
+```{Bassiana results, loo comparison, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
 bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
@@ -54,7 +54,7 @@ bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bas
 # loo comparison
 Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
 Bas_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m2_brms")
-Bass_loo <- loo_compare(Bas_m1_brms, Bas_m2_brms)
+Bass_loo <- as.data.frame(loo_compare(Bas_m1_brms, Bas_m2_brms))
 
 # extract posteriors for best model + Plotting 
 post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
@@ -75,15 +75,23 @@ mcmc_areas(bass.dat,
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope") 
+
 # contrast phenotype slopes
 bass.phenotype <- as.mcmc(XXm - XYm)
 mean(bass.phenotype)
 HPDinterval(bass.phenotype)
-
 # contrast genotype slopes 
 bass.genotype <- as.mcmc(XXf - XXm)
 mean(bass.genotype)
 HPDinterval(bass.genotype)
+
+# SD prediction data and anova comparison
+Bass_SD_dat <- readRDS(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.SD.mod.dat.RDS")
+BassSD_mod <- lm(Estimate ~sex +test+ sex*test, data = Bass_SD_dat)
+summary(BassSD_mod) 
+Bass.pairwise.comparision <- emmeans(BassSD_mod, pairwise ~ sex | test)
+Bass.pairwise.comparision
+plot(Bass.pairwise.comparision)
 
 ###### Body size comparison with BRMS model
 bass.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
@@ -92,11 +100,12 @@ bm_diff <- hypothesis(bass.bodymass, 'sexXX_Male + sexXY_Male = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
-pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
+bassiana.bodysize <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
 ```
-# Results
-<p>*Bassiana duperreyi –* According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.2, SE=6.9). Determining if sex-reversed individuals (XXm) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, there was minimal overlap in slope differences in overall metabolic rate between XXm and concordant females (XXf). Whereas there was a high degree of overlap in slope differences in overall metabolic rates between concordant males (XYm) and XXm, suggesting support for like phenotype hypothesis for sex-reversed individuals (Fig. XX; Table 1). When accounting for how metabolic rate varied across body mass and sex, there was further evidence for the like phenotype hypothesis. As mass increased the relationship in predicted metabolic rate for XXm and XYm were more similar and lower than XYf (Fig. XX). There were no differences in body mass across sex class (p>0.05; Fig. XX).<p>
-```{loo comparison, echo=FALSE, message=FALSE, warning=FALSE}
+<p>*Bassiana duperreyi –* According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.6, SE=6.8). Determining if sex-reversed individuals (XXm) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, there was minimal overlap in slope differences in overall metabolic rate between XXm and concordant females (XXf). Whereas there was a high degree of overlap in slope differences in overall metabolic rates between concordant males (XYm) and XXm, but we did not detect any significant differences between sex
+
+(Table 1). When accounting for how metabolic rate varied across body mass and sex, there was evidence for the like phenotype hypothesis. As mass increased the relationship in predicted metabolic rate for XXm and XYm were more similar and lower than XYf (Fig. 2A). When comparing prediction values derived from the Brms models, the distribution of predicted metabolic at three areas (mean, +1SD, and -1SD) of log body mass varied significantly when comparing each sex.<p>
+```{Pogona results, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
@@ -138,6 +147,7 @@ mcmc_areas(pog.dat,
            point_est = "mean")+
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope")
+
 # contrast phenotype slopes
 pog.phenotype <- as.mcmc(ZWf - ZZf)
 mean(pog.phenotype)
@@ -151,6 +161,15 @@ HPDinterval(pog.genotype
 hg <- hypothesis(Pog_m2_brms, "sexZZf:zlogMass + sexZZm:zlogMass = 0")
 plot(hg)
 
+# SD prediction data and anova comparison
+Pogona_SD_dat <- readRDS(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/PogonaSD.mod.dat.RDS")
+Pogona_SD_dat <- lm(Estimate ~sex +test+ sex*test, data = Pogona_SD_dat)
+summary(Pogona_SD_dat) 
+anova(Pogona_SD_dat)
+Pogona.pairwise.comparision <- emmeans(Pogona_SD_dat, pairwise ~ sex | test)
+Pogona.pairwise.comparision
+plot(Pogona.pairwise.comparision)
+
 ###### Body size comparison with BRMS model  ######  
 pog.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
 summary(pog.bodymass)
@@ -158,6 +177,14 @@ bm_diff <- hypothesis(pog.bodymass, 'sexZZf + sexZZm = 0')
 mean(bm_diff$samples$H1)
 HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
-pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))      
+pogona.bodysize <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))      
 ```
 <p>*Pogona vitticeps -* According to loo values there was preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = XX, XX). Determining if sex-reversed individuals (ZZf) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, we found minimal overlap in slope differences in metabolic rate between ZZf and concordant males (ZZm). Whereas there was a high degree of overlap in slope differences in metabolic rate between concordant females (ZWf) and ZZf (Fig.XX ; Table XX), which indicated support for like phenotype hypothesis for sex-reversed individuals. These results were further supported when accounting for the relationship between body mass and sex. As mass increased, the predicted metabolic rate for ZWf and ZZf was more similar and higher than ZZm (Fig. XX). We found no differences in body mass across sex class (F2, 131= 0.37, p>0.05; Fig. XX). <p>
+# Figures & Tables
+```{r, fig.align = 'center', fig.cap = "Theoretical framework to test the metabolic consequences of sex-reversal using two model systems with different patterns of genetic sex determination Bassiana duperryii [XYm (concordant male): XXf (concordant female): XXm (sex-reversed male)] and Pogona vitticeps [ZW (concordant female): ZZ (concordant male): ZZf (sex-reversed female)]. Where these hypotheses are tested by comparing how the energetic requirements vary across body mass and sex for each system. In each graph the y axis is log-transformed metabolic rate and the x-axis is log-transformed body mass. The like phenotype hypothesis suggests that sex-reversed individuals will resemble their phenotypic counterparts rather than their genotypic counterparts. The like phenotype hypothesis proposes that sex-reversed individuals will have similar energy requirements to their phenotypic counterparts regardless of their genotype. The like genotype hypothesis proposes that sex-reversed individuals will have similar energy requirements their genotypic counterparts regardless of their phenotype"}
+knitr::include_graphics("./Figs/Theoretical framework.pdf")
+```
+
+```{r, fig.align = 'center', fig.cap = "Comparison of log metabolic rate (V_{02}\ mL\ min^{-1}) across log body mass (g) by sex class for *Bassiana duperryii* (A) and *Pogona vitticeps* (B). Points represent  metabolic measurements for each individual in relation to mass of each individual. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex. Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels on the right show the distribution of predicted metabolic at three areas of log body mass (mean, +1SD, and -1SD) for each sex and species."}
+knitr::include_graphics("./Figs/Final.Regression.Bass.Pog.png")
+```
