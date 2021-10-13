@@ -28,3 +28,6 @@ rstanarm
 plotrix
 patchwork
 ggExtra
+sjPlot
+lazerhawk
+kableExtra

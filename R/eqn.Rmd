@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
 ```
 ```{r, package, results = 'hide'}
 # Packages
-pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra")
+pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "sjPlot", "lazerhawk", "kableExtra")
 ```
 # Materials and methods
 *Lizard collection and husbandry* 
@@ -33,7 +33,12 @@ Where the rate of O$_{2}$ is the maximum percentage of O$_{2}$ in a sample above
 $$
 MR_{ijk} = \left ( \beta_{0} + id_{j} + d_{k}\right) + \left( \beta_{6} +  \beta_{id_{j}} \cdot time_{z} \right) + \beta_{1} \cdot Sex_{XXf} + \beta_{2} \cdot Sex_{XYm} + \beta_{3} \cdot log \ Mass_{sc} + \beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf} + \beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XYm} + e_{ijk}
 $$
-Where $MR_{ijk}$ is the metabolic rate ($log\ VO_2 \cdot mL^{-1} \cdot min^{-1}$) for measurement *i* (i = 1 to $N_{m}$, number of measurements) on individual *j* (j = 1 to $N_{id}$, number of individuals) and day *k* (k = 1 to $N_{d}$, number of days).  We estimated a linear slope ($\beta_{6}$) for measurement time ($time_{z}$, z-transformed); a linear slope for log transformed mass ($log \ Mass_{sc}$, centered on mean, sc) and contrasts for the difference sex classes ($\beta_{1}-\beta_{2}$), where $Sex_{XXf}$ and $Sex_{XYm}$ are for true sex and sex reversed animals, respectively. We also estimated different mass scaling relationships for the different sex classes (i.e., $\beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf}$ and  $\beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm}$, respectively). We included a random intercept ($id_{j}$) and slope for $time_{z}$ ($\beta_{id_{ij}}$) for individual *j* across measurement occations. Deviations were sampled from a multivariate normal distribution (~$MVN \left( [0,0], ID \right)$, where **ID** is a (co)variance matrix with a random intercept and slope variance and their covariance). We also included a random day effect ($d_{k}$) (~ $N\left( 0, \sigma^2_{k}\right)$). <p>
+Where $MR_{ijk}$ is the metabolic rate ($log\ VO_2 \cdot mL^{-1} \cdot min^{-1}$) for measurement *i* (i = 1 to $N_{m}$, number of measurements) on individual *j* (j = 1 to $N_{id}$, number of individuals) and day *k* (k = 1 to $N_{d}$, number of days).  We estimated a linear slope ($\beta_{6}$) for measurement time ($time_{z}$, z-transformed); a linear slope for log transformed mass ($log \ Mass_{sc}$, centered on mean, sc) and contrasts for the difference sex classes ($\beta_{1}-\beta_{2}$), where $Sex_{XXf}$ and $Sex_{XYm}$ are for true sex and sex reversed animals, respectively. We also estimated different mass scaling relationships for the different sex classes (i.e., $\beta_{4} \cdot log \ Mass_{sc} \cdot Sex_{XXf}$ and  $\beta_{5} \cdot log \ Mass_{sc} \cdot Sex_{XXm}$, respectively). We included a random intercept ($id_{j}$) and slope for $time_{z}$ ($\beta_{id_{ij}}$) for individual *j* across measurement occations. Deviations were sampled from a multivariate normal distribution (~$MVN \left( [0,0], ID \right)$, where **ID** is a (co)variance matrix with a random intercept and slope variance and their covariance). We also included a random day effect ($d_{k}$) (~ $N\left( 0, \sigma^2_{k}\right)$).<p>
+<p>To understand if the distribution of mass specific metabolic was influenced differently across sex, we predicted metabolic rate at three distributions of zlogBodyMass ($\mu$, +1SD, and -1SD). Distributions of metabolic rate were derived from predictions of Brms models using the predict function. We compared how these mass distributions ($\mu$, +1SD, and -1SD) influenced predicted metabolic rate values and how they varied across sex following this model structure: 
+$$
+MR_{predict}\ = \ O2_{estimate} \cdot sex\ class+ mass_{t} +sex\ class\cdot mass_{t} 
+$$
+Where $MR_{predict}$ is the predicted  metabolic rate measurement for each mass distribution, $O_{2\ estimate}$ is the predicted $O_{2}$ from our Brms model, sex class is the chromosome and phenotypic complement for each species, $mass_{t}$ is the category of mass distribution ($\mu$, +1SD, and -1SD) and their interaction. When results were significant, we followed with pairwise comparisons from emmeans package in R (Lenth et al., 2018). <p>
 # Results
 ```{Bassiana results, loo comparison, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
@@ -50,22 +55,38 @@ bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bas
          zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
+# sample size 
+bassiana.sample.size <- bassiana.data %>%
+  group_by(id, sex) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  group_by(sex) %>% 
+  summarise(n = n()) %>% 
+  mutate(total.sample.size = sum(n),
+         total.n.samples = 760)
+    
 ######  Metabolic rate Bassiana ######  
 # loo comparison
 Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
 Bas_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m2_brms")
-Bass_loo <- as.data.frame(loo_compare(Bas_m1_brms, Bas_m2_brms))
+loo_compare(Bas_m1_brms, Bas_m2_brms)
+bayes_R2(Bas_m1_brms)
 
-# extract posteriors for best model + Plotting 
-post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
+# Model output table
+Bas_m1_table <- lazerhawk::brms_SummaryTable(Bas_m1_brms)
+
+# Posteriors 1)figure & 2) table
 # extracting posteriors 
+post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
+dimnames(post_Bas_m1)
 XXf <- as.array(post_Bas_m1[,"b_zlogMass"])
 XXm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
                 post_Bas_m1[,"b_sexXX_Male:zlogMass"])
 XYm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
                 post_Bas_m1[,"b_sexXY_Male:zlogMass"])
 bass.dat <- cbind(XXf, XXm, XYm)
-# plotting posteriors lot
+
+#1) plotting posteriors 
 mcmc_areas(bass.dat, 
            pars = c("XXf", "XXm", "XYm"),
            prob = 0.95, 
@@ -74,18 +95,29 @@ mcmc_areas(bass.dat,
   theme_bw() +
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
-  labs(y = TeX("Sex class"), x = "Slope") 
+  labs(y = TeX("Sex class"), x = "Slope")
+
+# 2) posterior table
+Bas.postior.table <- Bas_m1_brms %>%
+  emmeans( ~sex  ) %>%
+  gather_emmeans_draws() %>%
+  median_qi() %>% 
+  rename(Estimate = .value,
+         Upper = .upper,
+         Lower = .lower) %>% 
+  dplyr::select(-c(.width, .interval, .point))
 
 # contrast phenotype slopes
 bass.phenotype <- as.mcmc(XXm - XYm)
 mean(bass.phenotype)
 HPDinterval(bass.phenotype)
+
 # contrast genotype slopes 
 bass.genotype <- as.mcmc(XXf - XXm)
 mean(bass.genotype)
 HPDinterval(bass.genotype)
 
-# SD prediction data and anova comparison
+##### SD prediction data and ANOVA comparison and posthoc test with emmeans
 Bass_SD_dat <- readRDS(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.SD.mod.dat.RDS")
 BassSD_mod <- lm(Estimate ~sex +test+ sex*test, data = Bass_SD_dat)
 summary(BassSD_mod) 
@@ -102,9 +134,8 @@ HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
 bassiana.bodysize <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
 ```
-<p>*Bassiana duperreyi –* According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.6, SE=6.8). Determining if sex-reversed individuals (XXm) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, there was minimal overlap in slope differences in overall metabolic rate between XXm and concordant females (XXf). Whereas there was a high degree of overlap in slope differences in overall metabolic rates between concordant males (XYm) and XXm, but we did not detect any significant differences between sex
-
-(Table 1). When accounting for how metabolic rate varied across body mass and sex, there was evidence for the like phenotype hypothesis. As mass increased the relationship in predicted metabolic rate for XXm and XYm were more similar and lower than XYf (Fig. 2A). When comparing prediction values derived from the Brms models, the distribution of predicted metabolic at three areas (mean, +1SD, and -1SD) of log body mass varied significantly when comparing each sex.<p>
+<p>*Bassiana duperreyi –* We recorded a total of 760 observations for 40 individuals (XXf:n = 15, XYm:n = 12, XXm:n = 13). According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.6, SE = 6.8), with 77% of the variation being explained by this model. Overall, we found little evidence for 
+<p>
 ```{Pogona results, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
@@ -122,13 +153,28 @@ pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogon
          zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
+# sample size 
+pogona.sample.size <- pogona.data %>%
+  group_by(id, sex) %>% 
+  summarise(n = n()) %>% 
+  ungroup() %>% 
+  group_by(sex) %>% 
+  summarise(n = n()) %>% 
+  mutate(total.n.individuals = sum(n),
+         total.n.samples = 1365)
+
 ######  Metabolic rate Pogona ######  
 # loo comparison
 Pog_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m1_brms")
 Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
-Pog_loo <- loo_compare(Pog_m1_brms, Pog_m2_brms)
+loo_compare(Pog_m1_brms, Pog_m2_brms)
+bayes_R2(Pog_m2_brms)
 
-# extract posteriors for best model + Plotting 
+# Model output table
+tab_model(Pog_m2_brms)
+Pog_m2_table <- lazerhawk::brms_SummaryTable(Pog_m2_brms)
+
+# Posteriors 1)figure & 2) table
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
 # extracting posteriors 
 ZWf <- as.array(post_pog_m2[,"b_zlogMass"])
@@ -139,7 +185,7 @@ ZZm <- as.array(post_pog_m2[,"b_zlogMass"] +
 # combining to one df
 pog.dat <- cbind(ZWf, ZZf, ZZm)
 
-# plotting posteriors lot
+# 1)plotting posteriors 
 mcmc_areas(pog.dat, 
            pars = c("ZWf", "ZZf", "ZZm"),
            prob = 0.95, 
@@ -148,20 +194,29 @@ mcmc_areas(pog.dat,
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope")
 
+# 2) posterior table
+Pogona.postior.table <- Pog_m2_brms %>%
+  emmeans( ~ sex ) %>%
+  gather_emmeans_draws() %>%
+  median_qi() %>% 
+  rename(Estimate = .value,
+         Upper = .upper,
+         Lower = .lower) %>% 
+  dplyr::select(-c(.width, .interval, .point))
+
 # contrast phenotype slopes
 pog.phenotype <- as.mcmc(ZWf - ZZf)
 mean(pog.phenotype)
 HPDinterval(pog.phenotype)
-hp<- hypothesis(Pog_m2_brms, "zlogMass + sexZZf:zlogMass = 0")
-plot(hp)
+hypothesis(Pog_m2_brms, "zlogMass + sexZZf:zlogMass = 0")
+
 # contrast genotype slopes 
 pog.genotype <- as.mcmc(ZZf - ZZm)
 mean(pog.genotype)
 HPDinterval(pog.genotype
-hg <- hypothesis(Pog_m2_brms, "sexZZf:zlogMass + sexZZm:zlogMass = 0")
-plot(hg)
+hypothesis(Pog_m2_brms, "sexZZf:zlogMass + sexZZm:zlogMass = 0")
 
-# SD prediction data and anova comparison
+##### SD prediction data and ANOVA comparison and posthoc test with emmeans
 Pogona_SD_dat <- readRDS(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/PogonaSD.mod.dat.RDS")
 Pogona_SD_dat <- lm(Estimate ~sex +test+ sex*test, data = Pogona_SD_dat)
 summary(Pogona_SD_dat) 
@@ -179,12 +234,16 @@ HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
 pogona.bodysize <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))      
 ```
-<p>*Pogona vitticeps -* According to loo values there was preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = XX, XX). Determining if sex-reversed individuals (ZZf) supported the like phenotype or like genotype hypothesis when comparing overall metabolic rate, we found minimal overlap in slope differences in metabolic rate between ZZf and concordant males (ZZm). Whereas there was a high degree of overlap in slope differences in metabolic rate between concordant females (ZWf) and ZZf (Fig.XX ; Table XX), which indicated support for like phenotype hypothesis for sex-reversed individuals. These results were further supported when accounting for the relationship between body mass and sex. As mass increased, the predicted metabolic rate for ZWf and ZZf was more similar and higher than ZZm (Fig. XX). We found no differences in body mass across sex class (F2, 131= 0.37, p>0.05; Fig. XX). <p>
+<p>*Pogona vitticeps -* We recorded a total of 1365 observations for 96 individuals (ZWf:n = 30, ZZm:n = 38, ZZf:n = 38). According to loo values there was preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -189.0, 34.3), with 84% of the variation being explained by this model. 
+
+<p>
 # Figures & Tables
-```{r, fig.align = 'center', fig.cap = "Theoretical framework to test the metabolic consequences of sex-reversal using two model systems with different patterns of genetic sex determination Bassiana duperryii [XYm (concordant male): XXf (concordant female): XXm (sex-reversed male)] and Pogona vitticeps [ZW (concordant female): ZZ (concordant male): ZZf (sex-reversed female)]. Where these hypotheses are tested by comparing how the energetic requirements vary across body mass and sex for each system. In each graph the y axis is log-transformed metabolic rate and the x-axis is log-transformed body mass. The like phenotype hypothesis suggests that sex-reversed individuals will resemble their phenotypic counterparts rather than their genotypic counterparts. The like phenotype hypothesis proposes that sex-reversed individuals will have similar energy requirements to their phenotypic counterparts regardless of their genotype. The like genotype hypothesis proposes that sex-reversed individuals will have similar energy requirements their genotypic counterparts regardless of their phenotype"}
+```{r, fig.align = 'center', fig.cap = "Theoretical framework to test the metabolic consequences of sex-reversal using two model systems with different patterns of genetic sex determination Bassiana duperryii [XYm (concordant male): XXf (concordant female): XXm (sex-reversed male)] and Pogona vitticeps [ZW (concordant female): ZZ (concordant male): ZZf (sex-reversed female)]. Where these hypotheses are tested by comparing how the energetic requirements vary across body mass and sex for each system. In each graph the y axis is log-transformed metabolic rate and the x-axis is log-transformed body mass. The like phenotype hypothesis suggests that sex-reversed individuals will resemble their phenotypic counterparts rather than their genotypic counterparts. The like phenotype hypothesis proposes that sex-reversed individuals will have similar energy requirements to their phenotypic counterparts regardless of their genotype. The like genotype hypothesis proposes that sex-reversed individuals will have similar energy requirements their genotypic counterparts regardless of their phenotype."}
 knitr::include_graphics("./Figs/Theoretical framework.pdf")
 ```
 
 ```{r, fig.align = 'center', fig.cap = "Comparison of log metabolic rate (V_{02}\ mL\ min^{-1}) across log body mass (g) by sex class for *Bassiana duperryii* (A) and *Pogona vitticeps* (B). Points represent  metabolic measurements for each individual in relation to mass of each individual. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex. Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels on the right show the distribution of predicted metabolic at three areas of log body mass (mean, +1SD, and -1SD) for each sex and species."}
 knitr::include_graphics("./Figs/Final.Regression.Bass.Pog.png")
 ```
+
+
