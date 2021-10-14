@@ -10,6 +10,7 @@ editor_options:
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+options(digits = 3)
 ```
 ```{r, package, results = 'hide'}
 # Packages
@@ -134,7 +135,7 @@ HPDinterval(mcmc(bm_diff$samples$H1))
 # p-value equivalent for the full hypothesis test. 
 bassiana.bodysize <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))   
 ```
-<p>*Bassiana duperreyi –* We recorded a total of 760 observations for 40 individuals (XXf:n = 15, XYm:n = 12, XXm:n = 13). According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.6, SE = 6.8), with 77% of the variation being explained by this model. Overall, we found little evidence for 
+<p>*Bassiana duperreyi –* We recorded a total of observations for 40 individuals (XXf:n = 15, XYm:n = 12, XXm:n = 13). According to loo values there was equal support for both models, but preference for the second model that accounted for heteroscedasticity ([heteroscedastic model  – homoscedastic model] loo: ELPD = -5.6, SE = 6.8), with 77% of the variation being explained by this model. Overall, we found little evidence for 
 <p>
 ```{Pogona results, echo=FALSE, message=FALSE, warning=FALSE}
 # raw data
