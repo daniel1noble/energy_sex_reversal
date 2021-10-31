@@ -1,7 +1,6 @@
 ################################################### 
 # Analysis of sexreversal status bassiana experiment
 ################################################### 
-
 # Packages
 pacman::p_load("lme4", "tidyverse", "MASS", "brms", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "gridExtra", "cowplot", "reshape2")
 
@@ -45,9 +44,8 @@ residuals_brms <- function(model, data){
   e <- with(data, log(O2_min)) - fitted
   return(e)
 }
-
 ##############
-## Model 1
+## Model 1 -  Bas_m1_brms
 # @ dan updated the model so that ESS values were near 3000 so increased thinning to 5 and upped the iterations
 ##############
 rerun1=FALSE
@@ -60,22 +58,25 @@ if(rerun1){
   Bas_m1_brms <- add_criterion(Bas_m1_brms, c("loo", "waic"))
   saveRDS(Bas_m1_brms, "./models/Bas_m1_brms")
 } else {Bas_m1_brms <- readRDS("./models/Bas_m1_brms")}
-summary(Bas_m1_brms)
-
+####################
+# Model 1 -  Bas_m1_brms checks
+####################
 # checking lags for this model 
 # @dan looks  better after increasing thinning and iterations  
 draws <- as.array(Bas_m1_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
-
 # check residuals
 e <- residuals_brms(Bas_m1_brms, bassiana.data)
 hist(e)
-#R2 of full model
+# plots
+plot(Bas_m1_brms)
+#R2 and summary of full model
 bayes_R2(Bas_m1_brms)
+summary(Bas_m1_brms)
 
 
 ##############
-## Model 2
+# Model 2 - Bas_m2_brms
 # @ dan updated the model so that ESS values were near 3000 so increased thinning to 5 and upped the iterations
 ##############
 rerun2=FALSE
@@ -91,35 +92,35 @@ if(rerun2){
   # read file in
   Bas_m2_brms <- readRDS(file = "models/Bas_m2_brms")
 }
-plot(Bas_m2_brms)
-summary(Bas_m2_brms)
-
+####################
+# Model 2 - Bas_m2_brms checks
+####################
 # checking lags for this model
 # @ dan looks much better after increasing thinning and iterations  
 draws <- as.array(Bas_m2_brms)
 mcmc_acf(draws,  pars = c("b_Intercept","b_sexXX_Male", "b_sexXY_Male", "b_zlogMass"), lags =10)
-
 # Check residuals
 e <- residuals_brms(Bas_m2_brms, bassiana.data)
 hist(e)
-#R2 of full model
+# plots
+plot(Bas_m2_brms)
+#R2 and summary
 bayes_R2(Bas_m2_brms)
-
+summary(Bas_m2_brms)
 
 ####################
 # Model comparison
 ####################
 # SE is large and difference is probably not sufficient to warrant a het model
-# going with Bas_m1_brms
 loo_compare(Bas_m1_brms, Bas_m2_brms)
 tab_model(Bas_m1_brms, file = "R/Figs/Bas_m1_brms_table.html")
+
 
 ####################  
 # extract posteriors for Bas_m1_brms model + Plotting 
 ####################
 post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
 dimnames(Bas_m1_brms)
-
 # extracting posteriors 
 XXf <- as.array(post_Bas_m1[,"b_zlogMass"])
 XXm <- as.array(post_Bas_m1[,"b_zlogMass"] + 
@@ -128,7 +129,7 @@ XYm <- as.array(post_Bas_m1[,"b_zlogMass"] +
                 post_Bas_m1[,"b_sexXY_Male:zlogMass"])
 bass.dat <- cbind(XXf, XXm, XYm)
 
-# plotting posteriors lot
+# plotting posteriors
 mcmc_areas(bass.dat, 
            pars = c("XXf", "XXm", "XYm"),
            prob = 0.95, 
@@ -305,6 +306,7 @@ bass.sd.plot <- ggplot(bass.SD, aes(x=Estimate, group = sex, fill = sex)) +
 # combined plots
 bassiana.final.fig <- plot_grid(bass.reg.plot, bass.sd.plot, ncol = 2)
 
+
 ####################################
 ######### Pogona  O2 data  ######### 
 ####################################
@@ -325,7 +327,6 @@ pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analys
          zstartmass = scale(log(start_mass_g), scale = FALSE),
          zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
-
 # quick plot
 # box/violin plot
 fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) + 
@@ -336,10 +337,9 @@ fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) +
   labs(y = TeX("Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
   theme_bw()
 fig
-
-
 ##############
-## Model 1 @dan control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
+## Model 1 - Pog_m1_brms
+# @dan control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
 ##############
 rerun1=FALSE
 if(rerun1){
@@ -352,24 +352,26 @@ if(rerun1){
   Pog_m1_brms <- add_criterion(Pog_m1_brms, c("loo"))
   saveRDS(Pog_m1_brms, "./models/Pog_m1_brms")
 } else {Pog_m1_brms <- readRDS("./models/Pog_m1_brms")}
-
-# model checks
-# checking lags for this model, 
+####################
+# Model 1 - Pog_m1_brms checks
+####################
+# checking lags for this model 
 #@dan looks much better after increasing thinning and iterations  
-summary(Pog_m1_brms)
 draws <- as.array(Pog_m1_brms)
 mcmc_acf(draws,  pars = c("b_Intercept", "b_sexZZf", "b_sexZZm"), lags =10)
-#R2 of full model
-bayes_R2(Pog_m1_brms)
-
-####################
-# Checking residuals
-####################
+# check residuals
 e <- residuals_brms(Pog_m1_brms, pogona.data)
 hist(e)
+# plots
+plot(Pog_m1_brms)
+#R2 of and summary
+bayes_R2(Pog_m1_brms)
+summary(Pog_m1_brms)
+
 
 ##############
-## Model 2 @ dan same as above, control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
+## Model 2 - Pog_m2_brms
+# @ dan same as above, control = list(adapt_delta=0.95) in our model is slowing up my computer so I removed it. Also based off ESS values and ACF plots I changed the thin to 5 and the iterations to 5000
 ##############
 rerun2=FALSE
 if(rerun2){
@@ -383,21 +385,21 @@ if(rerun2){
   # read file in
   Pog_m2_brms <- readRDS(file = "./models/Pog_m2_brms")
 }
-# Model checks
-# checking lags for this model, looks much better after increasing thinning and iterations  
+####################
+# Model 2 - Pog_m2_brms checks
+####################
+# checking lags for this model 
+#@dan looks much better after increasing thinning and iterations  
 draws <- as.array(Pog_m2_brms)
-mcmc_acf(draws,  pars = c("b_Intercept","b_sexZZf", "b_sexZZm"), lags =10)
-# other checks
-plot(Pog_m2_brms)
-summary(Pog_m2_brms)
-#R2 of full model
-bayes_R2(Pog_m2_brms)
-
-####################
-# Checking residuals
-####################
+mcmc_acf(draws,  pars = c("b_Intercept", "b_sexZZf", "b_sexZZm"), lags =10)
+# check residuals
 e <- residuals_brms(Pog_m2_brms, pogona.data)
 hist(e)
+# plots
+plot(Pog_m2_brms)
+#R2 of and summary
+bayes_R2(Pog_m2_brms)
+summary(Pog_m2_brms)
 
 ####################
 # Model comparison
@@ -411,7 +413,6 @@ tab_model(Pog_m2_brms)
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
 Pog_m2_brms
 dimnames(post_pog_m2)
-
 # extracting posteriors 
 ZWf <- as.array(post_pog_m2[,"b_zlogMass"])
 ZZf <- as.array(post_pog_m2[,"b_zlogMass"] + 
@@ -420,7 +421,6 @@ ZZm <- as.array(post_pog_m2[,"b_zlogMass"] +
                   post_pog_m2[,"b_sexZZm:zlogMass"])
 # combining to one df
 pog.dat <- cbind(ZWf, ZZf, ZZm)
-
 # plotting posteriors lot
 mcmc_areas(pog.dat, 
            pars = c("ZWf", "ZZf", "ZZm"),
@@ -434,7 +434,7 @@ mcmc_areas(pog.dat,
 
 
 ####################  
-# manual predict values for lines
+# manual predict values for regression lines
 ####################
 # ZW females
 a_female <- post_pog_m2$b_Intercept
