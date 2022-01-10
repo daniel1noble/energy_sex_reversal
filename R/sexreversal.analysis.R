@@ -301,12 +301,7 @@ bass.raw.summary <- bassiana.data2 %>%
 bass.bodymass <- brm(zlogMass ~ sex , data = bass.raw.summary)
 saveRDS(bass.bodymass, "./models/Bas_bodymass")
 summary(bass.bodymass)
-bm_diff <- hypothesis(bass.bodymass, 'sexXXm + sexXYm = 0')
-mean(bm_diff$samples$H1)
-HPDinterval(mcmc(bm_diff$samples$H1))
-# p-value equivalent for the full hypothesis test. 
-pMCMC <- 1 - (table(bm_diff$samples$H1 > 0)[1] / (length(bm_diff$samples$H1) - 1))     
-pMCMC
+
 
 ####################
 # ALL Bassiana Plots
@@ -677,30 +672,43 @@ grid.arrange(bassiana.final.fig, pogona.final.fig, nrow = 2)
 
 
 ####################
-# growth ANCOVA comparison and posthoc test with emmeans
+# growth  comparisons
 ####################
 growth <- read.csv(file = "final.analysis.data/growth.bassiana.pogona.csv") %>% 
   rename(sex = Geno.pheno)
+  
 # bassiana growth
+# changing bassiana mass growth to centi-grams for table puposes
 bassiana.growth <- growth %>% 
-  filter(Species == "Bassiana")
+  filter(Species == "Bassiana") %>% 
+  mutate(Mass.1.cg = Mass.1.g*100 ,
+         Growth.rate.mass.cg = Growth.rate.mass.*100)
+
 # 1) SVL
-Bass.svl.mod <- lm(Growth.rate.SVL. ~sex +  SVL.1.mm, data = bassiana.growth)
-Bass.svl.pc <- emmeans(Bass.svl.mod, pairwise ~ sex ) 
+Bass.svl.mod <- brm(Growth.rate.SVL. ~ sex * SVL.1.mm , data = bassiana.growth, iter= 5000, warmup = 1000, 
+                    thin = 5, cores = 4)
+summary(Bass.svl.mod)
+saveRDS(Bass.svl.mod, file = "models/Bass.svl.growth.mod")
 #2) MASS
-Bass.mass.mod <- lm(Growth.rate.mass. ~sex + Mass.1.g, data = bassiana.growth)
-Bass.mass.pc <- emmeans(Bass.mass.mod, pairwise ~ sex )
+Bass.Mass.mod <- brm(Growth.rate.mass.cg ~ sex * Mass.1.cg , data = bassiana.growth, iter= 5000, warmup = 1000, 
+                     thin = 5, cores = 4)
+summary(Bass.Mass.mod)
+saveRDS(Bass.Mass.mod, file = "models/Bass.Mass.growth.mod")
 
 # pogona grwoth
 ##### 
 pogona.growth <- growth %>% 
   filter(Species == "Pogona")
 # 1) SVL
-Pog.svl.mod <- lm(Growth.rate.SVL. ~ sex +  SVL.1.mm, data = pogona.growth)
-Pog.svl.pairwise.comparision <- emmeans(Pog.svl.mod, pairwise ~ sex )
-# 2) Mass
-Pog.mass.mod <- lm(Growth.rate.mass. ~sex + Mass.1.g, data = pogona.growth)
-Pog.mass.pairwise.comparision <- emmeans(Pog.mass.mod, pairwise ~ sex )
+Pog.svl.mod <- brm(Growth.rate.SVL. ~ sex * SVL.1.mm , data = Pogona.growth, iter= 5000, warmup = 1000, 
+                   thin = 5, cores = 4)
+summary(Pog.svl.mod)
+saveRDS(Pog.svl.mod, file = "models/Pog.svl.growth.mod")
+# 2) MASS
+Pog.Mass.mod <- brm(Growth.rate.mass. ~ sex * Mass.1.g , data = Pogona.growth, iter= 5000, warmup = 1000, 
+                    thin = 5, cores = 4)
+summary(Pog.Mass.mod)
+saveRDS(Pog.Mass.mod, file = "models/Pog.Mass.growth.mod")
 
 ####################
 # Chisqure for mortality comparisons: summary,  analysis and figures for each species
@@ -794,3 +802,58 @@ rope(Diff.Pheno.upper.mass, ci = 0.95)
 plot(p_direction(Diff.Pheno.upper.mass))
 pd.Pheno.upper.mass <- p_direction(Diff.Pheno.upper.mass)
 pd_to_p(pd.Pheno.upper.mass, direction = "two-sided")
+
+
+
+
+
+
+
+
+###### 
+# old code
+###### 
+
+\newpage
+Table S4. Raw SVL (mm) and mass (g) growth rate estimates across sex class for Bassiana duperryii and Pogona vitticeps. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurment by the total number of days elapsed. Animals were remeasured between 3 and 6 months post hatch. 
+```{r Table S4,echo= FALSE}
+# bring in, combined and rename tables
+growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
+  dplyr::rename(sex = Geno.pheno)
+# Bassiana growth
+bassiana.growth.tbl <- growth %>% 
+  filter(Species == "Bassiana") %>% 
+  group_by(sex) %>% 
+  summarise("Sample Size" = n(),
+            "SVL growth rate mm/d " = mean(Growth.rate.SVL., na.rm = TRUE),
+            "SVL SD" = sd(Growth.rate.SVL., na.rm = TRUE),
+            "Mass growth rate g/d" = mean(Growth.rate.mass., na.rm = TRUE), 
+            "Mass SD" = sd(Growth.rate.mass., na.rm = TRUE)) %>% 
+  mutate(Species = "B. duperryii")
+# Pogona growth
+pogona.growth.tbl <- growth %>% 
+  filter(Species == "Pogona") %>% 
+  group_by(sex) %>% 
+  summarise("Sample Size" = n(),
+            "SVL growth rate mm/d " = mean(Growth.rate.SVL., na.rm = TRUE),
+            "SVL SD" = sd(Growth.rate.SVL., na.rm = TRUE),
+            "Mass growth rate g/d" = mean(Growth.rate.mass., na.rm = TRUE), 
+            "Mass SD" = sd(Growth.rate.mass., na.rm = TRUE)) %>% 
+  mutate(Species = "P. vitticeps")
+TableS3 <- rbind(bassiana.growth.tbl, pogona.growth.tbl) %>%
+  rename("Sex Class" = sex) %>% 
+  as.data.frame()
+TableS3  <-  TableS3[,c(7,1,2,3,4,5,6)]
+
+# S3 Final table
+Tbl.S3 <-flextable(TableS3) %>% 
+  italic(i = 1:6, j = 1, italic = TRUE) %>% 
+  hline(i=3, j = 1:7, part="body") %>% 
+  padding(i= 3, padding = 15, padding.top = TRUE) %>% 
+  merge_v(j = "Species") %>%  
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.S3)
+```
