@@ -119,26 +119,31 @@ post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
 variable.names(post_Bas_m1)
 
 ## extracting posteriors for interaction of sex and mass
-XXf.mass.posterior <- as.array(post_Bas_m1[,"b_Intercept"] + post_Bas_m1[,"b_logMass"])
+XXf.mass.posterior <- as.array(post_Bas_m1[,"b_logMass"])
 XXm.mass.posterior <- as.array(XXf.mass.posterior +  post_Bas_m1[,"b_sexXXm:logMass"])
 XYm.mass.posterior <- as.array(XXf.mass.posterior +  post_Bas_m1[,"b_sexXYm:logMass"])
 
-# H1: Like Phenotype Hypothesis
-RslopeDiff.Pheno.mass <- XYm.mass.posterior - XXm.mass.posterior
-rope(RslopeDiff.Pheno.mass, ci = 0.95)
-plot(p_direction(RslopeDiff.Pheno.mass))
-pd.Pheno.mass <- p_direction(RslopeDiff.Pheno.mass)
-pd_to_p(pd.Pheno.mass, direction = "two-sided")
-# H2: Like Genotype Hypothesis
-RslopeDiff.Geno.mass <- XXf.mass.posterior - XYm.mass.posterior
-rope(RslopeDiff.Geno.mass, ci = 0.95)
-plot(p_direction(RslopeDiff.Geno.mass))
-pd.geno.mass <- p_direction(RslopeDiff.Geno.mass)
-pd_to_p(pd.geno.mass, direction = "two-sided")
+## pMCMC Function
+# Calculates the, p-value or pMCMC value for a posterior distribution
+# x The vector for the posterior distribution. Note that this will test the null hypothesis that the parameter of interest is significantly different from 0. 
+pmcmc <- function(x){
+  2*(1 - max(table(x<0) / nrow(x)))
+}
+
+# H1: Like Phenotype Hypothesis - pMCMC
+Bass.RslopeDiff.Pheno.mass <- XYm.mass.posterior - XXm.mass.posterior
+Bass.pMCMC_phenotype_metabolism <- pmcmc(Bass.RslopeDiff.Pheno.mass)
+Bass.RslopeDiff.Pheno.mass
+
+# H2: Like Genotype Hypothesis - pMCMC
+Bass.RslopeDiff.Geno.mass <- XXf.mass.posterior - XYm.mass.posterior
+Bass.pMCMC_genotype_metabolism <- pmcmc(Bass.RslopeDiff.Geno.mass)
+Bass.pMCMC_genotype_metabolism
+
 
 ## plotting posteriors accounting for sex*mass interaction
-bass.dat <- cbind(XXf.mass.posterior, XXm.mass.posterior, XYm.mass.posterior)
-mcmc_areas(bass.dat, 
+Bass.mass.o2 <- cbind(XXf.mass.posterior, XXm.mass.posterior, XYm.mass.posterior)
+mcmc_areas(Bass.mass.o2, 
            pars = c("XXf.mass.posterior", "XXm.mass.posterior", "XYm.mass.posterior"),
            prob = 0.95, 
            prob_outer = 0.99, 
@@ -147,7 +152,6 @@ mcmc_areas(bass.dat,
   theme(axis.text = element_text(size=12)) +
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope Differences") 
-
 
 ####################  
 # manual predict values for regression lines for Figure 2A
@@ -437,23 +441,19 @@ ZZf.mass.posterior <- as.array(post_pog_m2[,"b_logMass"] +
                   post_pog_m2[,"b_sexZZf:logMass"])
 ZZm.mass.posterior <- as.array(post_pog_m2[,"b_logMass"] + 
                   post_pog_m2[,"b_sexZZm:logMass"])
-# combining to one df
-pog.dat <- cbind(ZWf.mass.posterior, ZZf.mass.posterior, ZZm.mass.posterior)
 
-# H1: Like Phenotype Hypothesis
-RslopeDiff.Pheno.mass <- ZWf.mass.posterior - ZZf.mass.posterior
-rope(RslopeDiff.Pheno.mass, ci = 0.95)
-plot(p_direction(RslopeDiff.Pheno.mass))
-pd.Pheno.mass <- p_direction(RslopeDiff.Pheno.mass)
-pd_to_p(pd.Pheno.mass, direction = "two-sided")
-# H2: Like Genotype Hypothesis
-RslopeDiff.Geno.mass <- ZZf.mass.posterior - ZZm.mass.posterior
-rope(RslopeDiff.Geno.mass, ci = 0.95)
-plot(p_direction(RslopeDiff.Geno.mass))
-pd.geno.mass <- p_direction(RslopeDiff.Geno.mass)
-pd_to_p(pd.geno.mass, direction = "two-sided")
+## H1: Like Phenotype Hypothesis - pMCMC
+Pog.RslopeDiff.Pheno.mass <- ZWf.mass.posterior - ZZf.mass.posterior
+Pog.pMCMC_phenotype_metabolism <- pmcmc(Pog.RslopeDiff.Pheno.mass)
+Pog.pMCMC_phenotype_metabolism
+
+## H2: Like Genotype Hypothesis - pMCMC
+Pog.RslopeDiff.Geno.mass <- ZZf.mass.posterior - ZZm.mass.posterior
+Pog.pMCMC_genotype_metabolism <- pmcmc(Pog.RslopeDiff.Geno.mass)
+Pog.pMCMC_genotype_metabolism
 
 ## plotting posteriors accounting for sex*mass interaction
+pog.dat <- cbind(ZWf.mass.posterior, ZZf.mass.posterior, ZZm.mass.posterior)
 mcmc_areas(pog.dat, 
            pars = c("ZWf.mass.posterior", "ZZf.mass.posterior", "ZZm.mass.posterior"),
            prob = 0.95, 
