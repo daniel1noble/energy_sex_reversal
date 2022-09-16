@@ -290,9 +290,7 @@ bass.reg<-  ggplot(data =bassiana.data2 , aes(logMass, Estimate, group = sex, co
   geom_point(alpha =.3)+
   # Now add in the model predictions
   geom_smooth(data = bass.mannual.pred, aes(x=logMass, y=Estimate, colour = sex)) + 
-  geom_ribbon(data = bass.mannual.pred, aes(x=logMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
-  geom_smooth(data = bass.mannual.pred, aes(x=logMass, y=Estimate+Est.Error, colour = sex)) +
-  geom_smooth(data = bass.mannual.pred, aes(x=logMass, y=Estimate-Est.Error, colour = sex)) + # @Kris, to smooth just add in two more smoothed lines ontop
+  geom_ribbon(data = bass.mannual.pred, aes(x=logMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) + 
   geom_smooth(data = bass.mannual.pred, aes(x=logMass, y=Estimate))+
   geom_vline(xintercept = 0.28, colour="black", linetype = "dotdash") + # Adding SD
   geom_text(aes(x=.28, label="+1.5 SD\n", y=-3.5), colour="black", angle=90, text=element_text(size=5))+
@@ -301,7 +299,7 @@ bass.reg<-  ggplot(data =bassiana.data2 , aes(logMass, Estimate, group = sex, co
   scale_fill_manual(values = mycolors, guide = FALSE) +
   scale_color_manual(values = mycolors, guide = FALSE) +
   theme_bw() +
-  theme(axis.text = element_text(size=10))+
+  theme(axis.text = element_text(size=10),axis.title = element_text(face="bold"))+
   scale_y_continuous(breaks = seq (-6.0, -3.0, by = .50), limits=c(-6.0, -3.0))+
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
 bass.reg.plot <- ggMarginal(bass.reg, margins = "x", groupColour = TRUE, groupFill = TRUE)
@@ -329,7 +327,7 @@ bass.sd.plot <- ggplot(Bass.Sd.plot.data, aes(x=Estimate, group = sex, fill = se
   xlab("Predicted Mean Metabolic Rate")+
   scale_x_continuous(name="Predicted Metabolic Rate", breaks = seq (-5.8, -3.2, by=0.2), limits=c(-5.8, -3.2))+
   theme_bw()+
-  theme(axis.text = element_text(size=10))
+  theme(axis.text = element_text(size=10), axis.title = element_text(face="bold"))
 # combined plots
 bassiana.final.fig <- cowplot::plot_grid(bass.reg.plot, bass.sd.plot, labels = c('A', 'B'), ncol=2)
 
@@ -599,8 +597,6 @@ pog.reg <-  ggplot(data =pogona.data2 , aes(logMass, Estimate, group = sex, colo
   # Now add in the model predictions
   geom_smooth(data = pog.mannual.pred, aes(x=logMass, y=Estimate, colour = sex)) + 
   geom_ribbon(data = pog.mannual.pred, aes(x=logMass, y=Estimate, ymin = Estimate-Est.Error, ymax = Estimate+Est.Error, fill = sex, colour = sex), alpha = 0.2) +
-  geom_smooth(data = pog.mannual.pred, aes(x=logMass, y=Estimate+Est.Error, colour = sex)) +
-  geom_smooth(data = pog.mannual.pred, aes(x=logMass, y=Estimate-Est.Error, colour = sex)) +
   geom_smooth(data = pog.mannual.pred, aes(x=logMass, y=Estimate))+
   geom_vline(xintercept = 0.45, colour="black", linetype = "dotdash") + # Adding SD line
   geom_text(aes(x=0.45, label="+1.5 SD\n", y=-0.5), colour="black", angle=90, text=element_text(size=10))+
@@ -610,7 +606,7 @@ pog.reg <-  ggplot(data =pogona.data2 , aes(logMass, Estimate, group = sex, colo
   scale_color_manual(values = mycolors, guide = FALSE) +
   scale_y_continuous(breaks=c(0,-0.5, -1, -1.5, -2, -2.5, -3, -3.5)) +
   theme_bw() +
-  theme(axis.text = element_text(size=10)) +
+  theme(axis.text = element_text(size=10), axis.title = element_text(face="bold")) +
   labs(y = TeX("log Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "log Mass (g)") 
 pog.reg.plot <- ggMarginal(pog.reg, margins = "x", groupColour = TRUE, groupFill = TRUE)
 ############
@@ -635,7 +631,7 @@ pog.sd.plot <- ggplot(Pog.Sd.plot.data, aes(x=Estimate, group = sex, fill = sex)
   scale_y_continuous(position = "right")+
   scale_x_continuous(name="Predicted Metabolic Rate", breaks = seq (-3,-0.5, by=0.5), limits = c(-3,-0.5))+
   theme_bw() +
-  theme(axis.text = element_text(size=10))
+  theme(axis.text = element_text(size=10),axis.title = element_text(face="bold"))
 # combined figure
 pogona.final.fig <- cowplot::plot_grid(pog.reg.plot,pog.sd.plot, labels = c('C', 'D'), ncol=2)
 
@@ -722,4 +718,132 @@ pog.mortality <- ggplot(Pogona_chi_sq_final, aes(fill=sex, y=n, x=Dead.Y.N.)) +
   theme_bw(base_size = 18, base_family = "Times New Roman") 
 # both figures
 grid.arrange(bass.mortality, pog.mortality, nrow = 2)
+
+####################
+# Energy expenditure
+####################
+# calculating energy expendature with ml/min data from bassiana and pogona 
+# To account for energy expenditure of hatchlings, a conversion factor was used 
+# to convert gas exchange to common rates of energy use (J h-1). 
+# A conversion factor of 20.5 J mL-1 of was used for each hatchling 
+# (mL O2 h-1; assuming RQ = 0:80; Gessaman and Nagy 1988), 
+# which limited the error in RMR to ±0.6 % when CO2 is not measured (Koteja, 1996)
+# bring in data
+bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  rename(day =date.dd.mm.yy.,
+         time = marker_sample,
+         id = bd_liz_id, 
+         O2_min = Final_MR_O2_min,
+         sex = Geno.pheno,
+         mass_g = mass) %>% 
+  mutate(ztime = scale(time),
+         logMass = scale(log(mass_g), scale = FALSE),
+         zstartmass = scale(log(start_mass_g), scale = FALSE),
+         zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
+  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
+
+# 1. transform 02 for each measurement from ml/m to ml/hr
+dat <- bassiana.data %>% 
+  group_by(id, sex) %>% 
+  summarise(O2_hr = mean(O2_min*60))
+
+# 2. convert ml/hr to energy (Joules; 20.5 JmL-1) for HR and day assuming RQ of .8
+# 3. then convert to six month estimate
+# NOTE:negative exponent 
+bass.month.daily.energy <- dat %>% 
+  group_by(id, sex) %>% 
+  summarise(O2_hr_kj = O2_hr*2.05,
+            O2_day_kj = O2_hr_kj*24,
+            O2_6month_kj = O2_day_kj*183)
+
+# plot by Hour
+hr.sum <- Rmisc::summarySE(bass.month.daily.energy, measurevar= "O2_hr_kj", groupvars=c("sex"))
+hr.sum<- hr.sum %>% mutate_if(is.numeric, ~round(., 2))
+
+# plots 
+# 1. Theme
+dodge = position_dodge(width=0.9)
+apatheme=theme_bw()+
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        panel.border=element_blank(),
+        axis.line=element_line(),
+        text=element_text(family='Times', size = 12))
+
+
+# arrange order sr, female, male
+# hr.sum <- hr.sum %>% mutate(sex, sex = factor(sex, levels = c("XXm","XXf","XYm")) %>% group_by(sex)
+
+# FINAL PLOTS
+#violin
+range(bass.month.daily.energy$O2_hr_kj)
+Bassiana.Energy.Hr <- ggplot(bass.month.daily.energy, aes(sex, O2_hr_kj)) +
+  geom_violin(aes(fill = sex), trim = FALSE) + 
+  geom_boxplot(width = 0.2)+
+  stat_summary(fun="mean")+
+  scale_fill_manual(values = c("grey40", "Red", "#3366FF"))+
+  apatheme+ 
+  ylab("Energy expenditure (J/h)")+
+  scale_y_continuous(breaks=seq(0, 3.5, .2), limits = c(0, 3)) +
+  theme(plot.title = element_text(hjust = 0.5))+
+  guides(fill=guide_legend(title="Sex Class"))
+
+
+###########
+# Pogona
+###########
+pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  rename(day =date.dd.mm.yy.,
+         time = marker_sample,
+         id = bd_liz_id, 
+         O2_min = Final_MR_O2_min,
+         sex = Geno.pheno,
+         mass_g = mass) %>% 
+  group_by(sex) %>% 
+  mutate(ztime = scale(time),
+         logmass = log(mass_g), 
+         zlogMass = scale(log(mass_g), scale = FALSE),
+         zstartmass = scale(log(start_mass_g), scale = FALSE),
+         zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
+  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
+# 1. transform 02 for each measurement from ml/m to ml/hr
+pog.dat <- pogona.data %>% 
+  group_by(id, sex) %>% 
+  summarise(O2_hr = mean(O2_min)*60)
+
+# 2. convert ml/hr to energy (Joules; 20.5 JmL-1) for HR and day assuming RQ of .8
+# NOTE:negative exponent 
+pog.daily.energy <- pog.dat %>% 
+  group_by(id, sex) %>% 
+  summarise(O2_hr_kj = O2_hr*2.05,
+            O2_day_kj = O2_hr_kj*12,
+            O2_6month_kj = O2_day_kj*183)
+
+
+# plot by Hour
+pog.hr.sum <- Rmisc::summarySE(pog.daily.energy, measurevar= "O2_hr_kj", groupvars=c("sex"))
+pog.hr.sum<- pog.hr.sum %>% mutate_if(is.numeric, ~round(., 2))
+
+
+# FINAL PLOT
+# violin
+range(pog.daily.energy$O2_hr_kj)
+Pogona.Energy.Hr <- ggplot(pog.daily.energy, aes(sex, O2_hr_kj)) +
+  geom_violin(aes(fill = sex), trim = FALSE) + 
+  geom_boxplot(width = 0.2)+
+  stat_summary(fun="mean")+
+  scale_fill_manual(values = c("grey40", "Red", "#3366FF"))+
+  apatheme+ 
+  ylab("Energy expenditure (J/h)")+
+  scale_y_continuous(breaks=seq(0, 60, 5), limits = c(0, 60)) +
+  theme(plot.title = element_text(hjust = 0.5))+
+  guides(fill=guide_legend(title="Sex Class"))
+
+# FINAL PLOT WITH both
+ggpubr::ggarrange(Bassiana.Energy.Hr, Pogona.Energy.Hr,
+                  font.label = list(size = 14, face = "italic"), 
+                  hjust = - 0.95,
+                  vjust = 2.0 ,
+                  labels = c( "B. duperreyi ", "P. vitticeps"),
+                  ncol = 1, nrow = 2)
 
