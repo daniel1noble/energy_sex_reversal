@@ -719,6 +719,9 @@ pog.mortality <- ggplot(Pogona_chi_sq_final, aes(fill=sex, y=n, x=Dead.Y.N.)) +
 # both figures
 grid.arrange(bass.mortality, pog.mortality, nrow = 2)
 
+
+
+
 ####################
 # Energy expenditure
 ####################

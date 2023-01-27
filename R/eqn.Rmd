@@ -294,45 +294,65 @@ pogona.table$p.value <- round(pogona.table$p.value, digits = 2)
 
 \newpage
 # Tables & Figures
-Table 1. Model coefficients for testing whether sex affects the slope of metabolic rate for *Bassiana duperreyi* and *Pogona vitticeps*. For both models, the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution. 
+Table 1. Model coefficients for testing whether sex affects the slope of metabolic rate for *Bassiana duperreyi*, where the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution. 
 ```{r Table1,echo= FALSE}
+# Tabulate the model coefficients - BASSIANA
 # bring in, combined and rename tables
 Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
 Bas_m1_table <- lazerhawk::brms_SummaryTable(Bas_m1_brms)
-Bas.postior.m1.table <- Bas_m1_table %>% 
-  dplyr::mutate(Species = "B. duperreyi")
-Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
-Pog_m2_table <- lazerhawk::brms_SummaryTable(Pog_m2_brms)
-Pogona.m2.table  <- Pog_m2_table %>% 
-  dplyr:: mutate(Species = "P. vitticeps")
-Table1 <- rbind(Bas.postior.m1.table, Pogona.m2.table)
-Table1  <-  Table1[,c(6,1,2,4,5)]
+Bas.postior.m1.table <- Bas_m1_table 
+Table1 <- Bas.postior.m1.table
+
 # rename variables for final table
-Table1[1,2] <- "Intercept (SexFemaleXX)"
-Table1[2,2] <- "SexMaleSRXX"
-Table1[3,2] <- "SexMaleXY"
-Table1[6,2] <- "SexMaleSRXX:logMass"
-Table1[7,2] <- "SexMaleXY:logMass"
-Table1[8,2] <- "Intercept (SexFemaleZW)"
-Table1[10,2] <- "SexFemaleSRZZ"
-Table1[11,2] <- "SexMaleZZ"
-Table1[14,2] <- "SexFemaleSRZZ:logMass"
-Table1[15,2] <- "SexMaleZZ:logMass"
+Table1[1,1] <- "Intercept (SexFemaleXX)"
+Table1[2,1] <- "SexMaleSRXX"
+Table1[3,1] <- "SexMaleXY"
+Table1[6,1] <- "SexMaleSRXX:logMass"
+Table1[7,1] <- "SexMaleXY:logMass"
 
 # Table1 Final table
 Tbl.1 <-flextable(Table1) %>% 
-  italic(i = 1:17, j = 1, italic = TRUE) %>% 
-  hline(i=7, j = 1:5, part="body") %>%  
-  merge_v(j = "Species") %>%  
   autofit(part = "all") %>% 
   align(align ="center", part = "all") %>% 
   font(part = "all", fontname = "Times New Roman") %>% 
   fix_border_issues() 
 knitr::knit_print(Tbl.1)
 ```
+
 \newpage
-Table 2. Posterior distributions for log metaboic rate (Log MR) and growth rate (SVL or mass) estimates when testing if sex-reversed individuals show support for Like Genotype or Like Phenotype hypothesis for *Bassiana duperreyi* and *Pogona vitticeps*.Estimates were comparisons from subtracting the model posterior distribution of the median for sex-reversed individuals by either their phenotypic or genotypic counterparts, depending on the hypothesis being tested. 
-```{r Table2,echo= FALSE, warning=FALSE}
+Table 2. Model coefficients for testing whether sex affects the slope of metabolic rate for Pogona vitticeps, where the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution..
+```{r Table2,echo= FALSE}
+# Tabulate the model coefficients - Pogona Heteroscedasticity model
+Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
+Pog_m2_table <- lazerhawk::brms_SummaryTable(Pog_m2_brms)
+Table2  <- Pog_m2_table
+
+# put random variables (sigma) at bottom
+Table2 <- Table2 %>% 
+  arrange(factor(Covariate, levels = c("Intercept", "sexZZf", "sexZZm", "logMass",
+                                       "ztime", "sexZZf:logMass", "sexZZm:logMass",
+                                       "sigma_Intercept", "sigma_logMass",
+                                       "sigma_ztime")))
+
+# rename variables for final table
+Table2[1,1] <- "Intercept (SexFemaleZW)"
+Table2[2,1] <- "SexFemaleSRZZ"
+Table2[3,1] <- "SexMaleZZ"
+Table2[6,1] <- "SexFemaleSRZZ:logMass"
+Table2[7,1] <- "SexMaleZZ:logMass"
+
+# Table2 Final table
+Tbl.2 <-flextable(Table2) %>%  
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.2)
+```
+
+\newpage
+Table 3. Posterior distributions for log metaboic rate (Log MR) and growth rate (SVL or mass) estimates when testing if sex-reversed individuals show support for Like Genotype or Like Phenotype hypothesis for *Bassiana duperreyi* and *Pogona vitticeps*.Estimates were comparisons from subtracting the model posterior distribution of the median for sex-reversed individuals by either their phenotypic or genotypic counterparts, depending on the hypothesis being tested. 
+```{r Table3,echo= FALSE, warning=FALSE}
 ######## MR
 ######### Hypothesis testing -  ACCOUNTING FOR INTERACTION BETWEEN SEX AND MASS
 # 1) Bassiana 
