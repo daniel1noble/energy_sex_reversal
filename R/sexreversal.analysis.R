@@ -355,7 +355,7 @@ pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analys
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 # quick plot
 # box/violin plot
-fig <- ggplot(pogona.data, aes(x = sex, y = log(O2_min))) + 
+fig <- ggplot(pogona.data.smr, aes(x = sex, y = log(O2_min))) + 
   geom_point() +
   geom_violin() + 
   geom_boxplot(width=0.1, color="red", alpha=0.2) + 
