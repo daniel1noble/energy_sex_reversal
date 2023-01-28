@@ -363,6 +363,7 @@ fig <- ggplot(pogona.data.smr, aes(x = sex, y = log(O2_min))) +
   labs(y = TeX("Metabolic Rate $\\left(\\frac{mL\\,O^2}{min}\\right)$"), x = "Sex")+ 
   theme_bw()
 fig
+
 ##############
 ## Model 1 - name:Pog_m1_brms
 ##############

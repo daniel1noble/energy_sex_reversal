@@ -1,5 +1,5 @@
 ---
-title: "Methods and Results"
+title: "Supplementary analysis (SMR), Tables and Figures"
 author: Kristoffer Wild
 date: "`r Sys.Date()`"
 output: 
@@ -16,7 +16,7 @@ options(digits = 2)
 rm(list=ls())
 sessionInfo()
 # Packages
-pacman::p_load("tidyverse", "MASS", "brms", "bayestestR", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "ggeffects", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "sjPlot", "lazerhawk", "kableExtra","flextable")
+pacman::p_load("dplyr", "MASS", "brms", "bayestestR", "MCMCglmm", "quantreg","lmerTest", "emmeans", "latex2exp", "DHARMa", "tidybayes", "ggeffects", "bayesplot", "rstanarm", "plotrix", "emmeans", "patchwork", "ggExtra", "sjPlot", "lazerhawk", "kableExtra","flextable", "tidyr")
 ```
 # Results
 ```{r Bassiana metabolism results, echo = FALSE, include = FALSE}
@@ -41,6 +41,14 @@ bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bas
          zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
+################################################
+# Calculating SMR - keeping bottom 10% of data #
+################################################
+bassiana.data <- bassiana.data %>% 
+  group_by(match) %>% # match accounts for individual and date
+  arrange(O2_min) %>% 
+  slice(1:floor(n()*.1))
+
 # Bassiana sample size 
 bassiana.sample.size <- bassiana.data %>%
   group_by(id, sex) %>% 
@@ -49,43 +57,21 @@ bassiana.sample.size <- bassiana.data %>%
   group_by(sex) %>% 
   summarise(n = n()) %>% 
   mutate(total.sample.size = sum(n),
-         total.n.samples = 760)
+         total.n.samples = 83)
 
-###### Body mass comparison with BRMS model  ######  
-bass.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
-summary(bass.bodymass)
-post_Bas_mass_m <- posterior_samples(bass.bodymass, pars = "^b")
-XXf.mass <- as.array(post_Bas_mass_m[,"b_Intercept"])
-XXm.mass <- as.array(XXf.mass +  post_Bas_mass_m[,"b_sexXXm"]) # sex reversed
-XYm.mass <- as.array(XXf.mass +  post_Bas_mass_m[,"b_sexXYm"])
-
-# H1: Mass of sex reversed and concordant male
-Bass.Pheno.mass <- XXm.mass - XYm.mass
-pmcmc.Pheno.mass. <- pmcmc(Bass.Pheno.mass)
-# H2: Mass of sex reversed and concordant female
-Bass.Geno.mass <-  XXm.mass - XXf.mass 
-pmcmc.geno.mass <- pmcmc(Bass.Geno.mass)
-# H3: Mass of concordant sexes
-Bass.Concordant.Sex <-  XXf.mass - XYm.mass 
-pmcmc.geno.mass <- pmcmc(Bass.Concordant.Sex)
-
-
-######  Metabolic rate results Bassiana ######  
+######  SMR rate results Bassiana ######  
 # loo comparison
-Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
-Bas_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m2_brms")
+Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Bas_m1_brms_smr")
+Bas_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Bas_m2_brms_smr")
 bass.loo <- as.data.frame(loo_compare(Bas_m1_brms, Bas_m2_brms))
 bass.r2 <- bayes_R2(Bas_m1_brms)
 
 # Metabolism model output table
 Bas_m1_table <- lazerhawk::brms_SummaryTable(Bas_m1_brms, round = 2)
-Bas_m1_table
 
 # Overall SEX differences in MR
 # 1) extract for posteriors values to test like phenotype and like genotype hypothesis
 post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
-variable.names(post_Bas_m1)
-
 
 ######### Hypothesis testing -  ACCOUNTING FOR INTERACTION BETWEEN SEX AND MASS
 ## extracting posteriors for interaction of sex and mass
@@ -99,14 +85,9 @@ pmcmc.Pheno.mass.m1 <- as.data.frame(pmcmc(Bass.Pheno.mass.diff.m1))
 # H2: Like Genotype Hypothesis
 Bass.Geno.mass.diff.m1 <-  XXf.mass.posterior - XXm.mass.posterior 
 pmcmc.geno.mass.m1 <- as.data.frame(pmcmc(Bass.Geno.mass.diff.m1))
-
-# upper SD differences for discussion
-BassianaSD.mod.dat.RDS <- readRDS("~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.SD.mod.dat.RDS") %>% 
-  group_by(sex) %>% 
-  summarise(uppSD = mean(upper))
 ```
-*Energetic Costs of Sex-reversal*
-*Bassiana duperreyi* - A total of `r bassiana.data %>% nrow()` measurements for `r bassiana.sample.size[1,3]` individuals (male$_{SR}$ XX: *n = `r bassiana.sample.size[2,2]`*, female XX: *n = `r bassiana.sample.size[1,2]`*, male XY: *n = `r bassiana.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table 1) that varied significantly by sex class (significant interaction between sex class × logmass – Fig. 2A). Sex-reversed male XX *B. duperreyi* had a scaling relationship that was most like their phenotypic counterparts (male XY - male$_{SR}$ XX; pMCMC = `r pmcmc.Pheno.mass.m1[1,1]`; Table 2) and lower than their genotypic counterparts (female XX - male$_{SR}$ XX; pMCMC = `r pmcmc.geno.mass.m1[1,1]`). For phenotypic males (male$_{SR}$ XX & male XX), this scaling relationship between logmass and metabolism changed similarly across differently sized individuals (Fig. 2B). Pairwise comparisons across sex class indicated no differences in body mass across our treatments (Fig. 2A; Table S1). The homogeneous variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r bass.loo[2,1]`, SE = `r bass.loo[2,2]`), accounting for `r bass.r2[1,1]`% (95% CI:`r bass.r2[1,3]` - `r bass.r2[1,4]`) of the variation in metabolic rate. 
+*Supplementary Analysis*
+We defined standard metabolic rate (SMR) as the the lowest 10% of values of oxygen consumption rate during our overnight trials. Once these data were removed we had a total of  `r bassiana.data %>% nrow()` measurements for `r bassiana.sample.size[1,3]` individuals (male$_{SR}$ XX: *n = `r bassiana.sample.size[2,2]`*, female XX: *n = `r bassiana.sample.size[1,2]`*, male XY: *n = `r bassiana.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table S1). Sex-reversed male XX *B. duperreyi* had a scaling relationship that was most like their phenotypic counterparts (male XY - male$_{SR}$ XX; pMCMC = `r pmcmc.Pheno.mass.m1[1,1]`; Table S1) and lower than their genotypic counterparts (female XX - male$_{SR}$ XX; pMCMC = `r pmcmc.geno.mass.m1[1,1]`). For phenotypic males (male$_{SR}$ XX & male XX), this scaling relationship between logmass and metabolism changed similarly across differently sized individuals (Fig. S1). The homogeneous variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r bass.loo[2,1]`, SE = `r bass.loo[2,2]`), accounting for `r bass.r2[1,1]`% (95% CI:`r bass.r2[1,3]` - `r bass.r2[1,4]`) of the variation in metabolic rate. 
 ```{r Pogona metabolism results, echo = FALSE, include = FALSE}
 # raw data
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
@@ -124,6 +105,14 @@ pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogon
          zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
   dplyr::select(-X, -Date.Hatched, -MR_O2_min)
 
+################################################
+# Calculating SMR - keeping bottom 10% of data #
+################################################
+pogona.data <- pogona.data %>% 
+  group_by(match) %>% # match accounts for individual and date
+  arrange(O2_min) %>% 
+  slice(1:floor(n()*.1))
+
 # sample size 
 pogona.sample.size <- pogona.data %>%
   group_by(id, sex) %>% 
@@ -132,37 +121,17 @@ pogona.sample.size <- pogona.data %>%
   group_by(sex) %>% 
   summarise(n = n()) %>% 
   mutate(total.n.individuals = sum(n),
-         total.n.samples = 1365)
+         total.n.samples = 146)
 
-###### Body mass comparison with BRMS model  ######  
-pog.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
-summary(pog.bodymass)
-post_Pog_mass_m <- posterior_samples(pog.bodymass, pars = "^b")
-ZWf.mass <- as.array(post_Pog_mass_m[,"b_Intercept"])
-ZZf.mass <- as.array(ZWf.mass +  post_Pog_mass_m[,"b_sexZZf"]) # sex reversed
-ZZm.mass <- as.array(ZWf.mass +  post_Pog_mass_m[,"b_sexZZm"])
-
-# H1: Mass of sex reversed and concordant females
-Pog.Pheno.mass <- ZWf.mass - ZZf.mass
-pmcmc.Pheno.mass. <- pmcmc(Pog.Pheno.mass)
-# H2: Mass of sex reversed and concordant males
-Pog.Geno.mass <-  ZZm.mass - ZZf.mass 
-pmcmc.geno.mass <- pmcmc(Pog.Geno.mass)
-# H3: Mass of concordant sexes
-Pog.Concordant.mass <-  ZWf.mass - ZZm.mass 
-pmcmc.geno.mass <- pmcmc(Pog.Concordant.mass)
-
-
-######  Metabolic rate Pogona ######  
+######  SMR rate Pogona ######  
 # loo comparison
-Pog_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m1_brms")
-Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
-pog.loo <- loo_compare(Pog_m1_brms, Pog_m2_brms)
+Pog_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Pog_m1_brms_smr")
+Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Pog_m2_brms_smr")
+pog.loo <- loo_compare(Pog_m2_brms,Pog_m1_brms)
 pog.r2 <- bayes_R2(Pog_m2_brms)
 
 # Metabolism model output table
 Pog_m2_table <- lazerhawk::brms_SummaryTable(Pog_m2_brms, round = 2)
-Pog_m2_table
 
 # 1) extract for posteriors values to test like phenotype and like genotype hypothesis
 post_Pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
@@ -173,6 +142,9 @@ ZWf.mass.posterior <- as.array( post_Pog_m2[,"b_logMass"])
 ZZf.mass.posterior <- as.array(ZWf.mass.posterior +  post_Pog_m2[,"b_sexZZf:logMass"]) # sex reversed
 ZZm.mass.posterior <- as.array(ZWf.mass.posterior +  post_Pog_m2[,"b_sexZZm:logMass"])
 
+pmcmc <- function(x){
+  2*(1 - max(table(x<0) / nrow(x)))
+}
 # H1: Like Phenotype Hypothesis
 Pog.Pheno.mass.diff.m2 <- ZWf.mass.posterior - ZZf.mass.posterior
 pmcmc.Pheno.mass.m2 <- as.data.frame(pmcmc(Pog.Pheno.mass.diff.m2))
@@ -181,125 +153,23 @@ pmcmc.Pheno.mass.m2 <- as.data.frame(pmcmc(Pog.Pheno.mass.diff.m2))
 Pog.Geno.mass.diff.m2 <-  ZZm.mass.posterior - ZZf.mass.posterior 
 pmcmc.geno.mass.m2 <- as.data.frame(pmcmc(Pog.Geno.mass.diff.m2))
 
-# upper SD differences for discussion
-PogonaSD.mod.dat.RDS <- readRDS("~/Dropbox/energy_sex_reversal/final.analysis.data/PogonaSD.mod.dat.RDS") %>% 
-  group_by(sex) %>% 
-  rename(upper = "+1.5_SD_predict") %>% 
-  summarise(uppSD = mean(upper))
-
 ```
-<p>*Pogona vitticeps* - A total of `r pogona.data %>% nrow()` measurements for `r pogona.sample.size[1,3]` individuals (female$_{SR}$ ZZ: *n = `r pogona.sample.size[2,2]`*, female ZW: *n = `r pogona.sample.size[1,2]`*, male ZZ: *n = `r pogona.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table 2) that varied significantly by sex class (significant interaction between sex class × logmass - Fig. 2C). Sex-reversed female *P. vitticeps* (female$_{SR}$ ZZ) had a scaling relationship that was overall higher than their genotypic counterparts (male ZZ - female$_{SR}$ ZZ; pMCMC = `r pmcmc.geno.mass.m2[1,1]`), but lower than their phenotypic counterparts (female ZW - female$_{SR}$ ZZ; pMCMC = `r pmcmc.Pheno.mass.m2[1,1]`; Table 2). As female$_{SR}$ got larger, the mass scaling relationship of metabolism was between male ZZ and female ZW (Fig. 2D). Pairwise comparisons of body mass across sex class in *P. vitticeps* indicated no differences in body mass across treatments (Fig. 2C; Table S1). The heteroscedasticity variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r pog.loo[2,1]`, SE = `r pog.loo[2,2]`), accounting for `r pog.r2[1,1]`% (95% CI:`r pog.r2[1,3]` - `r pog.r2[1,4]`) of the variation in metabolic rate.<p>
-
-```{r bodymass survival, echo = FALSE, include = FALSE}
-growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
-  dplyr::rename(sex = Geno.pheno)
-########## Growth (MASS AND SVL)
-# bassiana growth
-bassiana.growth <- growth %>% 
-  filter(Species == "Bassiana")
-# 1) SVL
-Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.svl.growth.mod")
-# extract for posteriors values to test like phenotype and like genotype hypothesis
-post_Bass_SVLgrowth <- posterior_samples(Bass.svl.mod, pars = "^b")
-######## Hypothesis testing - Overall SEX SVL
-## extracting posteriors for just sex
-XXf.SVL.Growth.posterior <- as.array( post_Bass_SVLgrowth[,"b_SVL.1.mm"])
-XXm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXXm:SVL.1.mm"]) # sex reversed
-XYm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXYm:SVL.1.mm"])
-# H1: Like Phenotype Hypothesis
-Bass.Pheno.SVL.Growth.diff <- XXm.SVL.Growth.posterior - XYm.SVL.Growth.posterior
-pmcmc.Pheno.SVL.Growth.diff <- pmcmc(Bass.Pheno.SVL.Growth.diff)
-# H2: Like Genotype Hypothesis
-Bass.Geno.mass.diff.m1 <-  XXf.SVL.Growth.posterior - XXm.SVL.Growth.posterior
-pmcmc.geno.mass.m1 <- pmcmc(Bass.Geno.mass.diff.m1)
-
-#2) MASS
-Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.Mass.growth.mod")
-post_Bass_Massgrowth <- posterior_samples(Bass.Mass.mod, pars = "^b")
-######## Hypothesis testing - Overall SEX Mass
-## extracting posteriors for just sex
-XXf.Mass.Growth.posterior <- as.array(post_Bass_Massgrowth[,"b_Mass.1.cg"])
-XXm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXXm:Mass.1.cg"]) # sex reversed
-XYm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXYm:Mass.1.cg"])
-# H1: Like Phenotype Hypothesis
-Bass.Pheno.Mass.Growth.diff <- XXm.Mass.Growth.posterior - XYm.Mass.Growth.posterior
-pmcmc.Pheno.Mass.Growth.diff <- pmcmc(Bass.Pheno.Mass.Growth.diff)
-# H2: Like Genotype Hypothesis
-Bass.Geno.mass.diff.m1 <-  XXf.Mass.Growth.posterior - XXm.Mass.Growth.posterior 
-pmcmc.geno.mass.m1 <- p_direction(Bass.Geno.mass.diff.m1)
-
-
-# Pogona grwoth
-Pogona.growth <- growth %>% 
-  filter(Species == "Pogona")
-# 1) SVL
-Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.svl.growth.mod")
-# extract for posteriors values to test like phenotype and like genotype hypothesis
-post_Pog_SVLgrowth <- posterior_samples(Pog.svl.mod, pars = "^b")
-######## Hypothesis testing - Overall SEX SVL
-## extracting posteriors for just sex
-ZWf.SVL.Growth.posterior <- as.array( post_Pog_SVLgrowth[,"b_SVL.1.mm"])
-ZZf.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZf:SVL.1.mm"]) # sex reversed
-ZZm.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZm:SVL.1.mm"])
-# H1: Like Phenotype Hypothesis
-Pog.Pheno.SVL.Growth.diff <- ZWf.SVL.Growth.posterior - ZZf.SVL.Growth.posterior
-pmcmc.Pheno.SVL.Growth.diff <- pmcmc(Pog.Pheno.SVL.Growth.diff)
-# H2: Like Genotype Hypothesis
-Pog.Geno.mass.diff.m1 <-  ZZm.SVL.Growth.posterior - ZZf.SVL.Growth.posterior 
-pmcmc.geno.mass.m1 <- p_direction(Pog.Geno.mass.diff.m1)
-
-# 2) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.Mass.growth.mod")
-# 2) extract for posteriors values to test like phenotype and like genotype hypothesis
-post_Pog_Massgrowth <- posterior_samples(Pog.Mass.mod, pars = "^b")
-
-######## Hypothesis testing - Overall SEX MASS
-## extracting posteriors for just sex
-ZWf.Mass.Growth.posterior <- as.array( post_Pog_Massgrowth[,"b_Mass.1.g"])
-ZZf.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZf:Mass.1.g"]) # sex reversed
-ZZm.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZm:Mass.1.g"])
-
-# H1: Like Phenotype Hypothesis
-Pog.Pheno.Mass.Growth.diff <- ZWf.Mass.Growth.posterior - ZZf.Mass.Growth.posterior
-pmcmc.Pheno.Mass.Growth.diff <- pmcmc(Pog.Pheno.Mass.Growth.diff)
-# H2: Like Genotype Hypothesis
-Pog.Geno.mass.diff.m1 <-  ZZm.Mass.Growth.posterior - ZZf.Mass.Growth.posterior 
-pmcmc.geno.mass.m1 <- pmcmc(Pog.Geno.mass.diff.m1)
-
-
-############# SURVIVAL
-# Bring in data,its with growth file
-survival <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
-  dplyr::rename(sex = Geno.pheno)
-bassiana.survival<- survival %>% 
-  filter(Species == "Bassiana")
-pogona.survival <- survival %>% 
-  filter(Species == "Pogona")
-#analysis - Bassiana
-bassiana.table<- fisher.test(table(bassiana.survival$Dead.Y.N., bassiana.survival$sex)) # N.S.
-Bassiana_chi_sq_final <- bassiana.survival %>% 
-  group_by(Dead.Y.N., sex) %>%
-  summarise(n = n()) 
-bassiana.table$p.value <- round(bassiana.table$p.value, digits = 2)
-# analysis - Pogona N.S.
-pogona.table <- fisher.test(table(pogona.survival$Dead.Y.N., pogona.survival$sex)) # N.S.
-# mortality chi_square Pogona
-Pogona_chi_sq_final <- pogona.survival %>% 
-  group_by(Dead.Y.N., sex) %>%
-  summarise(n = n())
-pogona.table$p.value <- round(pogona.table$p.value, digits = 2)
-```
-*Effects of sex-reversal on growth and survival*
-<p>Growth rates for both SVL and mass supported the Null Hypothesis among *B. duperreyi*, where there were no detectable differences across sex class (Table 3; Table S3). Similarly, in *P. vitticeps* the Null Hypothesis was supported when comparing SVL and mass growth rates across sex class (Table 3; Table S3). Sex-reversed male *B. duperreyi* had the lowest rates of survival (77%; Table S4) in comparison to concordant females (87%) and concordant males (100%), but this relationship was non-significant (p = `r bassiana.table$p.value`). Similarly, sex-reversed *P. vitticeps* individuals had the lowest rates of survival (75%; Table 3) in comparison to concordant females (83%) and concordant males (95%), but this relationship was also not significant (`r pogona.table$p.value`).<p>
-
+<p>*Pogona vitticeps* - Once SMR data (lowest 10%) were filtered we had a total of total of `r pogona.data %>% nrow()` measurements for `r pogona.sample.size[1,3]` individuals (female$_{SR}$ ZZ: *n = `r pogona.sample.size[2,2]`*, female ZW: *n = `r pogona.sample.size[1,2]`*, male ZZ: *n = `r pogona.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table S2). Sex-reversed female *P. vitticeps* (female$_{SR}$ ZZ) had a scaling relationship that was overall higher than their genotypic counterparts (male ZZ - female$_{SR}$ ZZ; pMCMC = `r pmcmc.geno.mass.m2[1,1]`), but lower than their phenotypic counterparts (female ZW - female$_{SR}$ ZZ; pMCMC = `r pmcmc.Pheno.mass.m2[1,1]`; Table 2).The heteroscedasticity variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r pog.loo[2,1]`, SE = `r pog.loo[2,2]`), accounting for `r pog.r2[1,1]`% (95% CI:`r pog.r2[1,3]` - `r pog.r2[1,4]`) of the variation in metabolic rate.<p>
 
 \newpage
 # Tables & Figures
-Table 1. Model coefficients for testing whether sex affects the slope of metabolic rate for *Bassiana duperreyi*, where the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution. 
-```{r Table1,echo= FALSE}
+```{r Fig1,echo=FALSE, results='asis'}
+knitr::include_graphics("./Final.Figures/FigS1")
+```
+Figure S1. Comparison of log standard metabolic rate (V̇$_{02}$ mL min$^{-1}$) across log body mass (g) by sex class for *Bassiana duperreyi* (A-B) and *Pogona vitticeps* (C-D). Sex-reversed individuals  (male$_{SR}$ XX or female$_{SR}$ ZZ) are denoted by red colour, phenotypic females (female XX or female ZW) are denoted in black, phenotypic males (male XY or male ZZ) are denoted in blue. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex (A,C). Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels (B and D) show the distribution of predicted metabolic rate at three areas of log body mass (mean, +1.5SD, and -1.5SD) denoted by the dash-dot line in panels A and C for each sex and species.
+
+
+\newpage
+Table S1. Model coefficients for testing whether sex affects the slope of standard metabolic rate for *Bassiana duperreyi*, where the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution.. 
+```{r TableS1,echo= FALSE}
 # Tabulate the model coefficients - BASSIANA
 # bring in, combined and rename tables
-Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
+Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Bas_m1_brms_smr")
 Bas_m1_table <- lazerhawk::brms_SummaryTable(Bas_m1_brms)
 Bas.postior.m1.table <- Bas_m1_table 
 Table1 <- Bas.postior.m1.table
@@ -321,10 +191,10 @@ knitr::knit_print(Tbl.1)
 ```
 
 \newpage
-Table 2. Model coefficients for testing whether sex affects the slope of metabolic rate for *Pogona vitticeps*, where the intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution..
-```{r Table2,echo= FALSE}
+Table S2. Model coefficients form hetero testing whether sex affects the slope of metabolic rate for *Pogona vitticeps*, which heteroscedasticity was accounted for within the data. The intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution.
+```{r TableS2,echo= FALSE}
 # Tabulate the model coefficients - Pogona Heteroscedasticity model
-Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
+Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/SMR_mods/Pog_m2_brms_smr")
 Pog_m2_table <- lazerhawk::brms_SummaryTable(Pog_m2_brms)
 Table2  <- Pog_m2_table
 
@@ -352,217 +222,10 @@ knitr::knit_print(Tbl.2)
 ```
 
 \newpage
-Table 3. Posterior distributions for log metaboic rate (Log MR) and growth rate (SVL or mass) estimates when testing if sex-reversed individuals show support for Like Genotype or Like Phenotype hypothesis for *Bassiana duperreyi* and *Pogona vitticeps*.Estimates were comparisons from subtracting the model posterior distribution of the median for sex-reversed individuals by either their phenotypic or genotypic counterparts, depending on the hypothesis being tested. 
-```{r Table3,echo= FALSE, warning=FALSE}
-######## MR
-######### Hypothesis testing -  ACCOUNTING FOR INTERACTION BETWEEN SEX AND MASS
-# 1) Bassiana 
-# metabolism:extract for posteriors values to test like phenotype and like genotype hypothesis
-Bas_m1_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bas_m1_brms")
-post_Bas_m1 <- posterior_samples(Bas_m1_brms, pars = "^b")
-XXf.MR.mass.posterior <- as.array( post_Bas_m1[,"b_logMass"])
-XXm.MR.mass.posterior <- as.array(XXf.MR.mass.posterior +  post_Bas_m1[,"b_sexXXm:logMass"]) # sex reversed
-XYm.MR.mass.posterior <- as.array(XXf.MR.mass.posterior +  post_Bas_m1[,"b_sexXYm:logMass"])
-# H1: Like Phenotype Hypothesis
-Bass.Pheno.MR <- XXm.MR.mass.posterior - XYm.MR.mass.posterior 
-Bass.Pheno.MR.post <- describe_posterior(Bass.Pheno.MR, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pmcmc value" 0.33
-Bass.Pheno.MR.post.pmcmc <- pmcmc(Bass.Pheno.MR)
-Bass.Pheno.MR.post$"pMCMC Value" = "0.33"
-Bass.Pheno.MR.post[1,1] = "Male XY-MaleSR XX"
-# H2: Like Genotype Hypothesis
-Bass.Geno.MR <- XXm.MR.mass.posterior - XXf.MR.mass.posterior
-Bass.Geno.MR.post <- describe_posterior(Bass.Geno.MR, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pmcmc value" 0.33
-Bass.Geno.MR.post.pmcmc <- pmcmc(Bass.Geno.MR)
-Bass.Geno.MR.post$"pMCMC Value" = "< 0.01"
-Bass.Geno.MR.post[1,1] = "Female XX-MaleSR XX"
-# final MR df
-Bass.MR.df <- rbind(Bass.Pheno.MR.post, Bass.Geno.MR.post) %>% mutate(Test = "Log MR ")
-
-# - growth
-# 1) SVL
-Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.svl.growth.mod")
-# extract for posteriors values to test like phenotype and like genotype hypothesis
-post_Bass_SVLgrowth <- posterior_samples(Bass.svl.mod, pars = "^b")
-## extracting posteriors for just sex
-XXf.SVL.Growth.posterior <- as.array( post_Bass_SVLgrowth[,"b_SVL.1.mm"])
-XXm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXXm:SVL.1.mm"]) # sex reversed
-XYm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXYm:SVL.1.mm"])
-# H1: Like Phenotype Hypothesis
-Bass.Pheno.SVL <- XXm.SVL.Growth.posterior - XYm.SVL.Growth.posterior
-Bass.Pheno.SVL.post <- describe_posterior(Bass.Pheno.SVL, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# pmcmc value 0.29
-Bass.Pheno.SVL.post.pmcmc <- pmcmc(Bass.Pheno.SVL)
-Bass.Pheno.SVL.post$"pMCMC Value" = "0.29"
-Bass.Pheno.SVL.post[1,1] = "Male XY-MaleSR XX"
-# H2: Like Genotype Hypothesis
-Bass.Geno.SVL <- XXm.SVL.Growth.posterior - XXf.SVL.Growth.posterior
-Bass.Geno.SVL.post <- describe_posterior(Bass.Geno.SVL, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pmcmc value <0.39
-Bass.Geno.SVL.post.pmcmc  <- pmcmc(Bass.Geno.SVL)
-Bass.Geno.SVL.post$"pMCMC Value" = "0.39"
-Bass.Geno.SVL.post[1,1] = "Female XX-MaleSR XX"
-# final SVL df
-Bass.SVL.df <- rbind(Bass.Pheno.SVL.post, Bass.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
-
-#2) MASS
-Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.Mass.growth.mod")
-post_Bass_Massgrowth <- posterior_samples(Bass.Mass.mod, pars = "^b")
-## extracting posteriors for just sex
-XXf.Mass.Growth.posterior <- as.array(post_Bass_Massgrowth[,"b_Mass.1.cg"])
-XXm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXXm:Mass.1.cg"]) # sex reversed
-XYm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXYm:Mass.1.cg"])
-# H1: Like Phenotype Hypothesis
-Bass.Pheno.Mass <- XXm.Mass.Growth.posterior - XYm.Mass.Growth.posterior
-Bass.Pheno.Mass.post <- describe_posterior(Bass.Pheno.Mass, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pmcmc value" 0.73
-Bass.Pheno.Mass.post.pmcmc <- pmcmc(Bass.Pheno.Mass)
-Bass.Pheno.Mass.post$"pMCMC Value" = "0.73"
-Bass.Pheno.Mass.post[1,1] = "Male XY-MaleSR XX"
-# H2: Like Genotype Hypothesis
-Bass.Geno.Mass <- XXm.Mass.Growth.posterior - XXf.Mass.Growth.posterior
-Bass.Geno.Mass.post <- describe_posterior(Bass.Geno.Mass, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pMCMC Value"" 0.24
-Bass.Geno.Mass.post.pmcmc <- pmcmc(Bass.Geno.Mass)
-Bass.Geno.Mass.post$"pMCMC Value" = "0.24"
-Bass.Geno.Mass.post[1,1] = "Female XX-MaleSR XX"
-# final MR df
-Bass.Mass.df <- rbind(Bass.Pheno.Mass.post, Bass.Geno.Mass.post) %>% mutate(Test = "Mass (cg/d)")
-# final
-Bass.MR.Growth <- rbind(Bass.MR.df, Bass.SVL.df, Bass.Mass.df) %>% 
-  mutate(Species = "B. duperreyi")
-
-# 2) Pogona 
-# - Metabolism :extract for posteriors values to test like phenotype and like genotype hypothesis
-Pog_m2_brms <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Pog_m2_brms")
-post_Pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
-ZWf.MR.mass.posterior <- as.array( post_Pog_m2[,"b_logMass"])
-ZZf.MR.mass.posterior <- as.array(ZWf.MR.mass.posterior +  post_Pog_m2[,"b_sexZZf:logMass"]) # sex reversed
-ZZm.MR.mass.posterior <- as.array(ZWf.MR.mass.posterior +  post_Pog_m2[,"b_sexZZm:logMass"])
-# H1: Like Phenotype Hypothesis
-Pog.Pheno.MR <- ZZf.MR.mass.posterior - ZWf.MR.mass.posterior
-Pog.Pheno.MR.post <- describe_posterior(Pog.Pheno.MR, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-Pog.Pheno.MR.post[1,1] = "Female ZW-FemaleSR ZZ"
-# "p value" 0.05
-Pog.Pheno.MR.post.pmcmc <-pmcmc(Pog.Pheno.MR)
-Pog.Pheno.MR.post$"pMCMC Value" = "0.04"
-# H2: Like Genotype Hypothesis
-Pog.Geno.MR <- ZZf.MR.mass.posterior - ZZm.MR.mass.posterior
-Pog.Geno.MR.post <- describe_posterior(Pog.Geno.MR, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-Pog.Geno.MR.post [1,1] = "Male ZZ-FemaleSR ZZ"
-# "p value" <0.01
-Pog.Geno.MR.post.pmcmc <-pmcmc(Pog.Geno.MR)
-Pog.Geno.MR.post$"pMCMC Value" = "< 0.01"
-Pog.MR.df <- rbind(Pog.Pheno.MR.post, Pog.Geno.MR.post) %>% mutate(Test = "Log MR ")
-
-# - Growth
-# 1) SVL
-Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.svl.growth.mod")
-post_Pog_SVLgrowth <- posterior_samples(Pog.svl.mod, pars = "^b")
-## extracting posteriors for just sex
-ZWf.SVL.Growth.posterior <- as.array( post_Pog_SVLgrowth[,"b_SVL.1.mm"])
-ZZf.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZf:SVL.1.mm"]) # sex reversed
-ZZm.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZm:SVL.1.mm"])
-# H1: Like Phenotype Hypothesis
-Pog.Pheno.SVL <- ZZf.SVL.Growth.posterior - ZWf.SVL.Growth.posterior
-Pog.Pheno.SVL.post <- describe_posterior(Pog.Pheno.SVL, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pMCMC Value" 0.94
-Pog.Pheno.SVL.post.pmcmc <- pmcmc(Pog.Pheno.SVL)
-Pog.Pheno.SVL.post$"pMCMC Value" = "0.94"
-Pog.Pheno.SVL.post[1,1] = "Female ZW-FemaleSR ZZ"
-# H2: Like Genotype Hypothesis
-Pog.Geno.SVL <- ZZf.SVL.Growth.posterior - ZZm.SVL.Growth.posterior
-Pog.Geno.SVL.post <- describe_posterior(Pog.Geno.SVL, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pMCMC Value = 0.48
-Pog.Geno.SVL.post.pd <- pmcmc(Pog.Geno.SVL)
-Pog.Geno.SVL.post$"pMCMC Value" = "0.48"
-Pog.Geno.SVL.post[1,1] = "Male ZZ-FemaleSRZZ"
-# final SVL df
-Pog.SVL.df <- rbind(Pog.Pheno.SVL.post, Pog.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
-
-# 2) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.Mass.growth.mod")
-post_Pog_Massgrowth <- posterior_samples(Pog.Mass.mod, pars = "^b")
-ZWf.Mass.Growth.posterior <- as.array( post_Pog_Massgrowth[,"b_Mass.1.g"])
-ZZf.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZf:Mass.1.g"]) # sex reversed
-ZZm.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZm:Mass.1.g"])
-# H1: Like Phenotype Hypothesis
-Pog.Pheno.Mass <- ZZf.Mass.Growth.posterior - ZWf.Mass.Growth.posterior 
-Pog.Pheno.Mass.post <- describe_posterior(Pog.Pheno.Mass, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "pMCMC Value" 0.40
-Pog.Pheno.Mass.post.pmcmc <- pmcmc(Pog.Pheno.Mass)
-Pog.Pheno.Mass.post$"pMCMC Value" = "0.40"
-Pog.Pheno.Mass.post[1,1] = "Female ZW-FemaleSR ZZ"
-# H2: Like Genotype Hypothesis
-Pog.Geno.Mass <- ZZf.Mass.Growth.posterior - ZZm.Mass.Growth.posterior
-Pog.Geno.Mass.post <- describe_posterior(Pog.Geno.Mass, estimate = "median",
-                                                   ci = .95, ci_method = "hdi")
-# "p value" = 0.05
-Pog.Geno.Mass.post.pmcmc <- pmcmc(Pog.Geno.Mass)
-Pog.Geno.Mass.post$"pMCMC Value" = "0.06"
-Pog.Geno.Mass.post[1,1] = "Male ZZ-FemaleSR ZZ"
-# final Mass df
-Pog.Mass.df <- rbind(Pog.Pheno.Mass.post, Pog.Geno.Mass.post) %>% mutate(Test = "Mass (g/d)")
-# Pogona all
-Pog.MR.Growth <- rbind(Pog.MR.df, Pog.SVL.df, Pog.Mass.df) %>% 
-  mutate(Species = "P. vitticeps")
-
-# bring in final table
-Table2 <- rbind(Bass.MR.Growth, Pog.MR.Growth) %>% 
-  rename("Contrast" = "Parameter",
-         "Estimate" = "Median",
-         "l-95% CI" = "CI_low", 
-         "u-95% CI" = "CI_high") %>% 
-  as.data.frame() %>% 
-  mutate_at(vars("Estimate","l-95% CI", "u-95% CI" ), funs(round(., 2))) 
-Table2  <-  Table2[,c(13,12,1,2,4,5,11)]
-
-Tbl2<-flextable(Table2) %>% 
-  italic(i = 1:12, j = 1, italic = TRUE) %>% 
-  hline(i=6, j = 1:7, part="body") %>% 
-  merge_v(j = c("Species", "Test")) %>%  
-  autofit(part = "all") %>% 
-  align(align ="center", part = "all") %>% 
-  font(part = "all", fontname = "Times New Roman") %>% 
-  bold(i = c(2, 7, 8), j = 3:7, bold = TRUE, part = "body") %>% 
-  set_table_properties(layout = "autofit") %>% 
-  fix_border_issues(part = "body")
-knitr::knit_print(Tbl2)
-```
-
-\newpage
-```{r Fig1,echo=FALSE, results='asis'}
-knitr::include_graphics("./Figs/Theoretical framework.pdf")
-```
-
-Figure 1. The Like Phenotype/Genotype Framework for testing the metabolic consequences of sex-reversal for ZZ/ZW and XX/XY genetic sex determination systems with different patterns of genetic sex determination. Colours indicate sex for *Bassiana duperreyi* (male$_{SR}$ XX - red: female XX - black: male XY - blue) and for *Pogona vitticeps* (female$_{SR}$ ZZ - red: female ZW - black: male ZZ - blue]. Body mass and metabolic rates have been log transformed to approximate linear relationships. Each pattern of genetic sex determination contains three competing hypotheses for the relationship between body mass and metabolic rates: Null hypothesis – no differences; Like phenotype hypothesis – similarities between reversed sex and concordant phenotype; Like genotype hypothesis – similarities between reversed sex and concordant genotype.
-
-\newpage
-```{r Fig2ABCD,echo= FALSE}
-knitr::include_graphics("./Figs/Regression.Final.pdf")
-```
-
-Figure 2. Comparison of log metabolic rate (V̇$_{02}$ mL min$^{-1}$) across log body mass (g) by sex class for *Bassiana duperreyi* (A-B) and *Pogona vitticeps* (C-D). Sex-reversed individuals  (male$_{SR}$ XX or female$_{SR}$ ZZ) are denoted by red colour, phenotypic females (female XX or female ZW) are denoted in black, phenotypic males (male XY or male ZZ) are denoted in blue. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex (A,C). Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels (B and D) show the distribution of predicted metabolic rate at three areas of log body mass (mean, +1.5SD, and -1.5SD) denoted by the dash-dot line in panels A and C for each sex and species.
-
-\newpage
-
-Table S1. BBRMS model coefficients for each respective species when testing mass differences across sex class for animals used in respirometry experiments. Mass was log-transformed and lower and upper bounds were derived from the 95% credible interval for each parameter, estimated from the posterior samples.
-
-```{r TableS1,echo= FALSE,  warning=FALSE}
+Table S3. BBRMS model coefficients for each respective species when testing mass differences across sex class for animals used in respirometry experiments. Mass was log-transformed and lower and upper bounds were derived from the 95% credible interval for each parameter, estimated from the posterior samples.
+```{r TableS3,echo= FALSE,  warning=FALSE}
 # bring in, combined and rename tables
-bass.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
+bass.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
 Bassiana.mass.table <- bass.bodymass %>%
   emmeans( ~ sex ) %>%
   gather_emmeans_draws() %>%
@@ -575,7 +238,7 @@ Bassiana.mass.table <- bass.bodymass %>%
   as.data.frame()
 
 ###### Body mass comparison with BRMS model  ######  
-bass.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
+bass.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
 post_Bas_mass_m <- posterior_samples(bass.bodymass, pars = "^b")
 XXf.mass <- as.array(post_Bas_mass_m[,"b_Intercept"])
 XXm.mass <- as.array(XXf.mass +  post_Bas_mass_m[,"b_sexXXm"]) # sex reversed
@@ -607,7 +270,7 @@ Bassiana.mass.table <- cbind(Bass_sample_Size, Bassiana.mass.table)
 #####
 # pogona
 #####
-pog.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
+pog.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
 Pogona.mass.table <- pog.bodymass %>%
   emmeans( ~ sex ) %>%
   gather_emmeans_draws() %>%
@@ -619,7 +282,7 @@ Pogona.mass.table <- pog.bodymass %>%
   dplyr::mutate(Species = "P. vitticeps") %>% 
   as.data.frame()
 ###### Body mass comparison with BRMS model  ######  
-pog.bodymass <- read_rds("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
+pog.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Pog_bodymass")
 post_Pog_mass_m <- posterior_samples(pog.bodymass, pars = "^b")
 ZWf.mass <- as.array(post_Pog_mass_m[,"b_Intercept"])
 ZZf.mass <- as.array(ZWf.mass +  post_Pog_mass_m[,"b_sexZZf"]) # sex reversed
@@ -668,9 +331,10 @@ Tbl.S1 <-flextable(TableS1) %>%
   fontsize(i = NULL, j = NULL, size = 10, part = "body")
 knitr::knit_print(Tbl.S1)
 ```
+
 \newpage
-Table S2. BRMS Model coefficients for SVL and mass growth rate estimates across sex class *Bassiana duperreyi*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Due to the small size and rate of change in grams, mass was converted to centigrams (cg). Animals were remeasured between 3 and 6 months post hatch.
-```{r TableS2, echo=FALSE}
+Table S4. BRMS Model coefficients for SVL and mass growth rate estimates across sex class *Bassiana duperreyi*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Due to the small size and rate of change in grams, mass was converted to centigrams (cg). Animals were remeasured between 3 and 6 months post hatch.
+```{r TableS4, echo=FALSE}
 ###
 # Bassiana Growth
 # 1) SVL
@@ -711,11 +375,10 @@ Tbl.S2 <- flextable(TableS2) %>%
 knitr::knit_print(Tbl.S2)
 
 ```
- 
-\newpage
-Table S3. BRMS Model coefficients for SVL and mass growth rate estimates across sex class for *Pogona vitticeps*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Animals were remeasured between 3 and 6 months post hatch.
 
-```{r TableS3, echo=FALSE}
+\newpage
+Table S5. BRMS Model coefficients for SVL and mass growth rate estimates across sex class for *Pogona vitticeps*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Animals were remeasured between 3 and 6 months post hatch.
+```{r TableS5, echo=FALSE}
 ###
 # Pogona growth
 # 1) SVL
@@ -755,10 +418,11 @@ Tbl.s3 <- flextable(Tables3) %>%
   fontsize(i = NULL, j = NULL, size = 10, part = "body")
 knitr::knit_print(Tbl.s3)
 
-```
+``` 
+
 \newpage
-Table S4. Frequency of mortality across sex class for *Bassiana duperryii* and *Pogona vitticeps*. These measurements were recorded from initial hatch date to 6 months post-hatch date. 
-```{r TableS4,echo= FALSE}
+Table S6. Frequency of mortality across sex class for *Bassiana duperryii* and *Pogona vitticeps*. These measurements were recorded from initial hatch date to 6 months post-hatch date. 
+```{r TableS6,echo= FALSE}
 growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
   dplyr::rename(sex = Geno.pheno)
 bassiana.growth <- growth %>% 
@@ -792,4 +456,4 @@ Tbl.S4 <-flextable(TableS4) %>%
   font(part = "all", fontname = "Times New Roman") %>% 
   fix_border_issues() 
 knitr::knit_print(Tbl.S4)
-```
+``` 
