@@ -370,15 +370,15 @@ Bass.Pheno.MR.post <- describe_posterior(Bass.Pheno.MR, estimate = "median",
 # "pmcmc value" 0.33
 Bass.Pheno.MR.post.pmcmc <- pmcmc(Bass.Pheno.MR)
 Bass.Pheno.MR.post$"pMCMC Value" = "0.33"
-Bass.Pheno.MR.post[1,1] = "Male XY-MaleSR XX"
+Bass.Pheno.MR.post[1,1] = "MaleSR XX-Male XY"
 # H2: Like Genotype Hypothesis
 Bass.Geno.MR <- XXm.MR.mass.posterior - XXf.MR.mass.posterior
 Bass.Geno.MR.post <- describe_posterior(Bass.Geno.MR, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pmcmc value" 0.33
+# "pmcmc value" 0.0025
 Bass.Geno.MR.post.pmcmc <- pmcmc(Bass.Geno.MR)
 Bass.Geno.MR.post$"pMCMC Value" = "< 0.01"
-Bass.Geno.MR.post[1,1] = "Female XX-MaleSR XX"
+Bass.Geno.MR.post[1,1] = "MaleSR XX-Female XX"
 # final MR df
 Bass.MR.df <- rbind(Bass.Pheno.MR.post, Bass.Geno.MR.post) %>% mutate(Test = "Log MR ")
 
@@ -398,7 +398,7 @@ Bass.Pheno.SVL.post <- describe_posterior(Bass.Pheno.SVL, estimate = "median",
 # pmcmc value 0.29
 Bass.Pheno.SVL.post.pmcmc <- pmcmc(Bass.Pheno.SVL)
 Bass.Pheno.SVL.post$"pMCMC Value" = "0.29"
-Bass.Pheno.SVL.post[1,1] = "Male XY-MaleSR XX"
+Bass.Pheno.SVL.post[1,1] = "MaleSR XX-Male XY"
 # H2: Like Genotype Hypothesis
 Bass.Geno.SVL <- XXm.SVL.Growth.posterior - XXf.SVL.Growth.posterior
 Bass.Geno.SVL.post <- describe_posterior(Bass.Geno.SVL, estimate = "median",
@@ -406,7 +406,7 @@ Bass.Geno.SVL.post <- describe_posterior(Bass.Geno.SVL, estimate = "median",
 # "pmcmc value <0.39
 Bass.Geno.SVL.post.pmcmc  <- pmcmc(Bass.Geno.SVL)
 Bass.Geno.SVL.post$"pMCMC Value" = "0.39"
-Bass.Geno.SVL.post[1,1] = "Female XX-MaleSR XX"
+Bass.Geno.SVL.post[1,1] = "MaleSR XX-Female XX"
 # final SVL df
 Bass.SVL.df <- rbind(Bass.Pheno.SVL.post, Bass.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
 
@@ -424,7 +424,7 @@ Bass.Pheno.Mass.post <- describe_posterior(Bass.Pheno.Mass, estimate = "median",
 # "pmcmc value" 0.73
 Bass.Pheno.Mass.post.pmcmc <- pmcmc(Bass.Pheno.Mass)
 Bass.Pheno.Mass.post$"pMCMC Value" = "0.73"
-Bass.Pheno.Mass.post[1,1] = "Male XY-MaleSR XX"
+Bass.Pheno.Mass.post[1,1] = "MaleSR XX-Male XY"
 # H2: Like Genotype Hypothesis
 Bass.Geno.Mass <- XXm.Mass.Growth.posterior - XXf.Mass.Growth.posterior
 Bass.Geno.Mass.post <- describe_posterior(Bass.Geno.Mass, estimate = "median",
@@ -432,7 +432,7 @@ Bass.Geno.Mass.post <- describe_posterior(Bass.Geno.Mass, estimate = "median",
 # "pMCMC Value"" 0.24
 Bass.Geno.Mass.post.pmcmc <- pmcmc(Bass.Geno.Mass)
 Bass.Geno.Mass.post$"pMCMC Value" = "0.24"
-Bass.Geno.Mass.post[1,1] = "Female XX-MaleSR XX"
+Bass.Geno.Mass.post[1,1] = "MaleSR XX-Female XX"
 # final MR df
 Bass.Mass.df <- rbind(Bass.Pheno.Mass.post, Bass.Geno.Mass.post) %>% mutate(Test = "Mass (cg/d)")
 # final
@@ -450,15 +450,15 @@ ZZm.MR.mass.posterior <- as.array(ZWf.MR.mass.posterior +  post_Pog_m2[,"b_sexZZ
 Pog.Pheno.MR <- ZZf.MR.mass.posterior - ZWf.MR.mass.posterior
 Pog.Pheno.MR.post <- describe_posterior(Pog.Pheno.MR, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-Pog.Pheno.MR.post[1,1] = "Female ZW-FemaleSR ZZ"
+Pog.Pheno.MR.post[1,1] = "FemaleSR ZZ-Female ZW"
 # "p value" 0.05
 Pog.Pheno.MR.post.pmcmc <-pmcmc(Pog.Pheno.MR)
-Pog.Pheno.MR.post$"pMCMC Value" = "0.04"
+Pog.Pheno.MR.post$"pMCMC Value" = "0.05"
 # H2: Like Genotype Hypothesis
 Pog.Geno.MR <- ZZf.MR.mass.posterior - ZZm.MR.mass.posterior
 Pog.Geno.MR.post <- describe_posterior(Pog.Geno.MR, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-Pog.Geno.MR.post [1,1] = "Male ZZ-FemaleSR ZZ"
+Pog.Geno.MR.post [1,1] = "FemaleSR ZZ-Male ZZ"
 # "p value" <0.01
 Pog.Geno.MR.post.pmcmc <-pmcmc(Pog.Geno.MR)
 Pog.Geno.MR.post$"pMCMC Value" = "< 0.01"
@@ -479,7 +479,7 @@ Pog.Pheno.SVL.post <- describe_posterior(Pog.Pheno.SVL, estimate = "median",
 # "pMCMC Value" 0.94
 Pog.Pheno.SVL.post.pmcmc <- pmcmc(Pog.Pheno.SVL)
 Pog.Pheno.SVL.post$"pMCMC Value" = "0.94"
-Pog.Pheno.SVL.post[1,1] = "Female ZW-FemaleSR ZZ"
+Pog.Pheno.SVL.post[1,1] = "FemaleSR ZZ-Female ZW"
 # H2: Like Genotype Hypothesis
 Pog.Geno.SVL <- ZZf.SVL.Growth.posterior - ZZm.SVL.Growth.posterior
 Pog.Geno.SVL.post <- describe_posterior(Pog.Geno.SVL, estimate = "median",
@@ -487,7 +487,7 @@ Pog.Geno.SVL.post <- describe_posterior(Pog.Geno.SVL, estimate = "median",
 # "pMCMC Value = 0.48
 Pog.Geno.SVL.post.pd <- pmcmc(Pog.Geno.SVL)
 Pog.Geno.SVL.post$"pMCMC Value" = "0.48"
-Pog.Geno.SVL.post[1,1] = "Male ZZ-FemaleSRZZ"
+Pog.Geno.SVL.post[1,1] = "FemaleSRZZ-Male ZZ"
 # final SVL df
 Pog.SVL.df <- rbind(Pog.Pheno.SVL.post, Pog.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
 
@@ -504,7 +504,7 @@ Pog.Pheno.Mass.post <- describe_posterior(Pog.Pheno.Mass, estimate = "median",
 # "pMCMC Value" 0.40
 Pog.Pheno.Mass.post.pmcmc <- pmcmc(Pog.Pheno.Mass)
 Pog.Pheno.Mass.post$"pMCMC Value" = "0.40"
-Pog.Pheno.Mass.post[1,1] = "Female ZW-FemaleSR ZZ"
+Pog.Pheno.Mass.post[1,1] = "FemaleSR ZZ-Female ZW"
 # H2: Like Genotype Hypothesis
 Pog.Geno.Mass <- ZZf.Mass.Growth.posterior - ZZm.Mass.Growth.posterior
 Pog.Geno.Mass.post <- describe_posterior(Pog.Geno.Mass, estimate = "median",
@@ -512,7 +512,7 @@ Pog.Geno.Mass.post <- describe_posterior(Pog.Geno.Mass, estimate = "median",
 # "p value" = 0.05
 Pog.Geno.Mass.post.pmcmc <- pmcmc(Pog.Geno.Mass)
 Pog.Geno.Mass.post$"pMCMC Value" = "0.06"
-Pog.Geno.Mass.post[1,1] = "Male ZZ-FemaleSR ZZ"
+Pog.Geno.Mass.post[1,1] = "FemaleSR ZZ-Female ZW"
 # final Mass df
 Pog.Mass.df <- rbind(Pog.Pheno.Mass.post, Pog.Geno.Mass.post) %>% mutate(Test = "Mass (g/d)")
 # Pogona all
