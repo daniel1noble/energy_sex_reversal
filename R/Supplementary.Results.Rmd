@@ -161,7 +161,13 @@ pmcmc.geno.mass.m2 <- as.data.frame(pmcmc(Pog.Geno.mass.diff.m2))
 ```{r Fig1,echo=FALSE, results='asis'}
 knitr::include_graphics("./Final.Figures/FigS1")
 ```
-Figure S1. Comparison of log standard metabolic rate (V̇$_{02}$ mL min$^{-1}$) across log body mass (g) by sex class for *Bassiana duperreyi* (A-B) and *Pogona vitticeps* (C-D). Sex-reversed individuals  (male$_{SR}$ XX or female$_{SR}$ ZZ) are denoted by red colour, phenotypic females (female XX or female ZW) are denoted in black, phenotypic males (male XY or male ZZ) are denoted in blue. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex (A,C). Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels (B and D) show the distribution of predicted metabolic rate at three areas of log body mass (mean, +1.5SD, and -1.5SD) denoted by the dash-dot line in panels A and C for each sex and species.
+Figure S1. 
+\newpage
+# Tables & Figures
+```{r Fig1,echo=FALSE, results='asis'}
+knitr::include_graphics("./Final.Figures/FigS2")
+```
+Figure S2. Comparison of log standard metabolic rate (V̇$_{02}$ mL min$^{-1}$) across log body mass (g) by sex class for *Bassiana duperreyi* (A-B) and *Pogona vitticeps* (C-D). Sex-reversed individuals  (male$_{SR}$ XX or female$_{SR}$ ZZ) are denoted by red colour, phenotypic females (female XX or female ZW) are denoted in black, phenotypic males (male XY or male ZZ) are denoted in blue. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex (A,C). Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels (B and D) show the distribution of predicted metabolic rate at three areas of log body mass (mean, +1.5SD, and -1.5SD) denoted by the dash-dot line in panels A and C for each sex and species.
 
 
 \newpage
