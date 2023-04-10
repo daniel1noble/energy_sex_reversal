@@ -112,6 +112,11 @@ loo_compare(Bas_m1_brms, Bas_m2_brms)
 
 
 ####################  
+# Model 2 - pior table
+####################  
+prior_summary(Bas_m1_brms)
+
+####################  
 # extract posteriors for plotting and hypothesis testing for interaction (sex*mass) 
 ####################
 summary(Bas_m1_brms)
@@ -427,7 +432,12 @@ summary(Pog_m2_brms)
 ####################
 loo_compare(Pog_m2_brms,Pog_m1_brms)
 
- ####################  
+####################  
+# Model 2 - pior table
+####################  
+prior_summary(Pog_m2_brms)
+
+####################  
 # extract posteriors for plotting and hypothesis testing for interaction (sex*mass) 
 ####################
 post_pog_m2 <- posterior_samples(Pog_m2_brms, pars = "^b")
