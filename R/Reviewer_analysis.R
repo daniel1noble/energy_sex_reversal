@@ -1,4 +1,6 @@
 # Reviewer correlations
+pacman::p_load("dplyr", "tidyverse","brms")
+
 # O2 - Pogona
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
