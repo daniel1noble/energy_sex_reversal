@@ -731,133 +731,82 @@ pog.mortality <- ggplot(Pogona_chi_sq_final, aes(fill=sex, y=n, x=Dead.Y.N.)) +
 grid.arrange(bass.mortality, pog.mortality, nrow = 2)
 
 
-
-
-####################
-# Energy expenditure
-####################
-# calculating energy expendature with ml/min data from bassiana and pogona 
-# To account for energy expenditure of hatchlings, a conversion factor was used 
-# to convert gas exchange to common rates of energy use (J h-1). 
-# A conversion factor of 20.5 J mL-1 of was used for each hatchling 
-# (mL O2 h-1; assuming RQ = 0:80; Gessaman and Nagy 1988), 
-# which limited the error in RMR to ±0.6 % when CO2 is not measured (Koteja, 1996)
-# bring in data
-bassiana.data <- read.csv("./final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+##########
+# MR and growth rate
+#########
+# filter data with growth and MR and summarize MR
+# O2 - Pogona
+pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
          time = marker_sample,
          id = bd_liz_id, 
          O2_min = Final_MR_O2_min,
          sex = Geno.pheno,
          mass_g = mass) %>% 
-  mutate(ztime = scale(time),
-         logMass = scale(log(mass_g), scale = FALSE),
-         zstartmass = scale(log(start_mass_g), scale = FALSE),
-         zendmass = scale(log(end_mass_g), scale = FALSE))%>% 
-  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
-
-# 1. transform 02 for each measurement from ml/m to ml/hr
-dat <- bassiana.data %>% 
   group_by(id, sex) %>% 
-  summarise(O2_hr = mean(O2_min*60))
-
-# 2. convert ml/hr to energy (Joules; 20.5 JmL-1) for HR and day assuming RQ of .8
-# 3. then convert to six month estimate
-# NOTE:negative exponent 
-bass.month.daily.energy <- dat %>% 
-  group_by(id, sex) %>% 
-  summarise(O2_hr_kj = O2_hr*2.05,
-            O2_day_kj = O2_hr_kj*24,
-            O2_6month_kj = O2_day_kj*183)
-
-# plot by Hour
-hr.sum <- Rmisc::summarySE(bass.month.daily.energy, measurevar= "O2_hr_kj", groupvars=c("sex"))
-hr.sum<- hr.sum %>% mutate_if(is.numeric, ~round(., 2))
-
-# plots 
-# 1. Theme
-dodge = position_dodge(width=0.9)
-apatheme=theme_bw()+
-  theme(panel.grid.major=element_blank(),
-        panel.grid.minor=element_blank(),
-        panel.border=element_blank(),
-        axis.line=element_line(),
-        text=element_text(family='Times', size = 12))
-
-
-# arrange order sr, female, male
-# hr.sum <- hr.sum %>% mutate(sex, sex = factor(sex, levels = c("XXm","XXf","XYm")) %>% group_by(sex)
-
-# FINAL PLOTS
-#violin
-range(bass.month.daily.energy$O2_hr_kj)
-Bassiana.Energy.Hr <- ggplot(bass.month.daily.energy, aes(sex, O2_hr_kj)) +
-  geom_violin(aes(fill = sex), trim = FALSE) + 
-  geom_boxplot(width = 0.2)+
-  stat_summary(fun="mean")+
-  scale_fill_manual(values = c("grey40", "Red", "#3366FF"))+
-  apatheme+ 
-  ylab("Energy expenditure (J/h)")+
-  scale_y_continuous(breaks=seq(0, 3.5, .2), limits = c(0, 3)) +
-  theme(plot.title = element_text(hjust = 0.5))+
-  guides(fill=guide_legend(title="Sex Class"))
-
-
-###########
-# Pogona
-###########
-pogona.data <- read.csv("./final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  summarise(mean_02 = mean(O2_min))
+# O2 - Bassiana
+bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
   rename(day =date.dd.mm.yy.,
          time = marker_sample,
          id = bd_liz_id, 
          O2_min = Final_MR_O2_min,
          sex = Geno.pheno,
          mass_g = mass) %>% 
-  group_by(sex) %>% 
-  mutate(ztime = scale(time),
-         logmass = log(mass_g), 
-         zlogMass = scale(log(mass_g), scale = FALSE),
-         zstartmass = scale(log(start_mass_g), scale = FALSE),
-         zendmass = scale(log(end_mass_g), scale = FALSE)) %>% 
-  dplyr::select(-X, -Date.Hatched, -MR_O2_min)
-# 1. transform 02 for each measurement from ml/m to ml/hr
-pog.dat <- pogona.data %>% 
   group_by(id, sex) %>% 
-  summarise(O2_hr = mean(O2_min)*60)
+  summarise(mean_02 = mean(O2_min))
+# growth & survival data both spp
+growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
+  dplyr::rename(sex = Geno.pheno, 
+                id = ID)
+growth$status <- ifelse(growth$Dead.Y.N. == "Alive", 1, 0)
+pogona_growth <- growth %>% 
+  filter(Species == "Pogona")
+bassiana_growth <- growth %>% 
+  filter(Species == "Bassiana")
+# merge data
+pogona_final <- merge(x = pogona.data, y = pogona_growth, by = "id", all = TRUE) %>% 
+  rename(sex = sex.x)
+bassiana_final <- merge(x = bassiana.data, y = bassiana_growth, by = "id", all = TRUE) %>% 
+  rename(sex = sex.x)
 
-# 2. convert ml/hr to energy (Joules; 20.5 JmL-1) for HR and day assuming RQ of .8
-# NOTE:negative exponent 
-pog.daily.energy <- pog.dat %>% 
-  group_by(id, sex) %>% 
-  summarise(O2_hr_kj = O2_hr*2.05,
-            O2_day_kj = O2_hr_kj*12,
-            O2_6month_kj = O2_day_kj*183)
+
+######
+# pogona MR and growth analysis
+######
+pog_o2_growth <- brm(Growth.rate.mass. ~ log(mean_02) + sex, family = "gaussian", 
+                     data = pogona_final, 
+                     iter= 5000, warmup = 1000, 
+                     thin = 5, cores = 8) # warning for NA's are animals that died
+# assumption plot checks
+plot(pog_o2_growth)
+# summary & r2
+summary(pog_o2_growth)
+bayes_R2(pog_o2_growth)
+# overall O2 on growth - slight positive relationship with high MR and high GR
+plot(conditional_effects(pog_o2_growth, "mean_02"), ask = FALSE)
+
+# save model
+saveRDS(pog_o2_growth, "./models/Pog_survival_metabolism")
 
 
-# plot by Hour
-pog.hr.sum <- Rmisc::summarySE(pog.daily.energy, measurevar= "O2_hr_kj", groupvars=c("sex"))
-pog.hr.sum<- pog.hr.sum %>% mutate_if(is.numeric, ~round(., 2))
+######
+# Bassiana
+######
+bass_o2_growth <- brm(Growth.rate.mass. ~ log(mean_02) + sex,
+                      family = "gaussian", 
+                      data = bassiana_final, 
+                      iter= 5000, warmup = 1000, 
+                      thin = 5, cores = 8) # warning for NA's are animals that died
+# assumption plot checks
+plot(bass_o2_growth)
+# summary & r2
+summary(bass_o2_growth)
+bayes_R2(bass_o2_growth)
+# overall O2 on grwoth
+plot(conditional_effects(bass_o2_growth, "mean_02"), ask = FALSE)
 
+# save model
+saveRDS(bass_o2_growth, "./models/Bass_survival_metabolism")
 
-# FINAL PLOT
-# violin
-range(pog.daily.energy$O2_hr_kj)
-Pogona.Energy.Hr <- ggplot(pog.daily.energy, aes(sex, O2_hr_kj)) +
-  geom_violin(aes(fill = sex), trim = FALSE) + 
-  geom_boxplot(width = 0.2)+
-  stat_summary(fun="mean")+
-  scale_fill_manual(values = c("grey40", "Red", "#3366FF"))+
-  apatheme+ 
-  ylab("Energy expenditure (J/h)")+
-  scale_y_continuous(breaks=seq(0, 60, 5), limits = c(0, 60)) +
-  theme(plot.title = element_text(hjust = 0.5))+
-  guides(fill=guide_legend(title="Sex Class"))
-
-# FINAL PLOT WITH both
-ggpubr::ggarrange(Bassiana.Energy.Hr, Pogona.Energy.Hr,
-                  font.label = list(size = 14, face = "italic"), 
-                  hjust = - 0.95,
-                  vjust = 2.0 ,
-                  labels = c( "B. duperreyi ", "P. vitticeps"),
-                  ncol = 1, nrow = 2)
 
