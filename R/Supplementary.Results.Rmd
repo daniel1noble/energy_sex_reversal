@@ -87,7 +87,9 @@ Bass.Geno.mass.diff.m1 <-  XXf.mass.posterior - XXm.mass.posterior
 pmcmc.geno.mass.m1 <- as.data.frame(pmcmc(Bass.Geno.mass.diff.m1))
 ```
 *Supplementary Analysis*
-We defined standard metabolic rate (SMR) as the the lowest 10% of values of oxygen consumption rate during our overnight trials. Once these data were removed we had a total of  `r bassiana.data %>% nrow()` measurements for `r bassiana.sample.size[1,3]` individuals (male$_{SR}$ XX: *n = `r bassiana.sample.size[2,2]`*, female XX: *n = `r bassiana.sample.size[1,2]`*, male XY: *n = `r bassiana.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table S1). Sex-reversed male XX *B. duperreyi* had a scaling relationship that was most like their phenotypic counterparts (male XY - male$_{SR}$ XX; pMCMC = `r pmcmc.Pheno.mass.m1[1,1]`; Table S1) and lower than their genotypic counterparts (female XX - male$_{SR}$ XX; pMCMC = `r pmcmc.geno.mass.m1[1,1]`). For phenotypic males (male$_{SR}$ XX & male XX), this scaling relationship between logmass and metabolism changed similarly across differently sized individuals (Fig. S1). The homogeneous variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r bass.loo[2,1]`, SE = `r bass.loo[2,2]`), accounting for `r bass.r2[1,1]`% (95% CI:`r bass.r2[1,3]` - `r bass.r2[1,4]`) of the variation in metabolic rate. 
+<p>Default priors for all Bayesian models were used. For all population-level (i.e. Fixed effects), the default prior for the intercept is a normal distribution with a mean 0 and standard deviation 10. The default prior for the shape parameter of the intercept was a Student-t distribution with mean 0, scale 2.5, and 3 degrees of freedom. The default prior for residuals (sigma) was a Student-t distribution with mean 0, scale 2.5, and 3 degrees of freedom. The Cholesky factor was used as the default prior for correlations between random effects<p>
+
+<p>We defined standard metabolic rate (SMR) as the the lowest 10% of values of oxygen consumption rate during our overnight trials. Once these data were removed we had a total of  `r bassiana.data %>% nrow()` measurements for `r bassiana.sample.size[1,3]` individuals (male$_{SR}$ XX: *n = `r bassiana.sample.size[2,2]`*, female XX: *n = `r bassiana.sample.size[1,2]`*, male XY: *n = `r bassiana.sample.size[3,2]`*) were recorded. There was a strong scaling relationship between log metabolic rate and log mass (Table S1). Sex-reversed male XX *B. duperreyi* had a scaling relationship that was most like their phenotypic counterparts (male XY - male$_{SR}$ XX; pMCMC = `r pmcmc.Pheno.mass.m1[1,1]`; Table S1) and lower than their genotypic counterparts (female XX - male$_{SR}$ XX; pMCMC = `r pmcmc.geno.mass.m1[1,1]`). For phenotypic males (male$_{SR}$ XX & male XX), this scaling relationship between logmass and metabolism changed similarly across differently sized individuals (Fig. S1). The homogeneous variance model was the most parsimonious ([heteroscedastic model – homoscedastic model] loo: `r bass.loo[2,1]`, SE = `r bass.loo[2,2]`), accounting for `r bass.r2[1,1]`% (95% CI:`r bass.r2[1,3]` - `r bass.r2[1,4]`) of the variation in metabolic rate. <p>
 ```{r Pogona metabolism results, echo = FALSE, include = FALSE}
 # raw data
 pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
@@ -367,9 +369,9 @@ Bass.mass.tbl <- Bass.mass.tbl %>% mutate("Species" = "B. duperreyi", "Growth ra
 
 ### 
 # final table
-tables2 <- rbind(Bass.mass.tbl, Bass.svl.tbl) 
-TableS2 <- tables2[,c(7,1,2,4,5)]
-Tbl.S2 <- flextable(TableS2) %>% 
+tables4 <- rbind(Bass.mass.tbl, Bass.svl.tbl) 
+TableS4 <- tables4[,c(7,1,2,4,5)]
+Tbl.S4 <- flextable(TableS4) %>% 
   italic(i = 1:12, j = 1, italic = TRUE) %>% 
   merge_v(j = c("Growth rate")) %>%  
   hline(i=c(6), j = 1:5, part="body") %>% 
@@ -378,7 +380,7 @@ Tbl.S2 <- flextable(TableS2) %>%
   font(part = "all", fontname = "Times New Roman") %>% 
   fix_border_issues() %>% 
   fontsize(i = NULL, j = NULL, size = 10, part = "body")
-knitr::knit_print(Tbl.S2)
+knitr::knit_print(Tbl.S4)
 
 ```
 
@@ -399,7 +401,7 @@ Pog.svl.tbl[6,1] <- "SexMaleZZ:SVL(mm)"
 Pog.svl.tbl <- Pog.svl.tbl %>% mutate("Species" = "P. vitticeps", "Growth rate" = "SVL(mm/d)")
 
 # 2) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.Mass.growth.mod")
+Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_metabolism")
 Pog.mass.tbl <- lazerhawk::brms_SummaryTable(Pog.Mass.mod)
 Pog.mass.tbl[1,1] <- "Intercept (SexFemaleZW)"
 Pog.mass.tbl[2,1] <- "SexFemaleSRZZ"
@@ -411,9 +413,9 @@ Pog.mass.tbl <- Pog.mass.tbl %>% mutate("Species" = "P. vitticeps", "Growth rate
 
 ### 
 # final table
-tables3 <- rbind(Pog.svl.tbl, Pog.mass.tbl)
-Tables3 <- tables3[,c(7,1,2,4,5)]
-Tbl.s3 <- flextable(Tables3) %>% 
+tables5 <- rbind(Pog.svl.tbl, Pog.mass.tbl)
+Tables5 <- tables5[,c(7,1,2,4,5)]
+Tbl.s5 <- flextable(Tables5) %>% 
   italic(i = 1:12, j = 1, italic = TRUE) %>% 
   merge_v(j = c("Growth rate")) %>%  
   hline(i=c(6), j = 1:5, part="body") %>% 
@@ -422,13 +424,48 @@ Tbl.s3 <- flextable(Tables3) %>%
   font(part = "all", fontname = "Times New Roman") %>% 
   fix_border_issues() %>% 
   fontsize(i = NULL, j = NULL, size = 10, part = "body")
-knitr::knit_print(Tbl.s3)
+knitr::knit_print(Tbl.s5)
+``` 
+
+\newpage
+Table S6. BRMS Model coefficients testing for the relationship between mean metabolic rate and mass growth rate estimates across sex class for *Bassiana duperryii* and *Pogona vitticeps*. Mass growth rate for *B. duperryii* is expressed in cg/d and mass growth rate for *P. vitticeps* is expressed in g/d.
+```{r TableS6, echo=FALSE}
+###
+# Pogona growth and matabolism
+# 1) MASS
+Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_metabolism")
+Pog.mass.tbl <- lazerhawk::brms_SummaryTable(Pog.Mass.mod)
+Pog.mass.tbl[2,1] <- "log(mean_O2)"
+Pog.mass.tbl <- Pog.mass.tbl %>% mutate("Species" = "P. vitticeps") %>% dplyr::select(-c("Est.Error"))
+
+# bassiana growth and metabolism
+#2) MASS
+Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_metabolism")
+Bass.mass.tbl <- lazerhawk::brms_SummaryTable(Bass.Mass.mod)
+Bass.mass.tbl[2,1] <- "log(mean_O2)"
+Bass.mass.tbl <- Bass.mass.tbl %>% mutate("Species" = "B. duperryii") %>% dplyr::select(-c("Est.Error"))
+
+
+### 
+# final table
+tables6 <- rbind(Bass.mass.tbl, Pog.mass.tbl)
+Tables6 <- tables6[,c(5,1,2,3,4)]
+Tbl.s6 <- flextable(Tables6) %>% 
+  italic(i = 1:8, j = 1, italic = TRUE) %>% 
+  merge_v(j = c("Species")) %>%  
+  hline(i=c(4), j = 1:4, part="body") %>% 
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() %>% 
+  fontsize(i = NULL, j = NULL, size = 10, part = "body")
+knitr::knit_print(Tbl.s6)
 
 ``` 
 
 \newpage
-Table S6. Frequency of mortality across sex class for *Bassiana duperryii* and *Pogona vitticeps*. These measurements were recorded from initial hatch date to 6 months post-hatch date. 
-```{r TableS6,echo= FALSE}
+Table S7. Frequency of mortality across sex class for *Bassiana duperryii* and *Pogona vitticeps*. These measurements were recorded from initial hatch date to 6 months post-hatch date. 
+```{r TableS7,echo= FALSE}
 growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
   dplyr::rename(sex = Geno.pheno)
 bassiana.growth <- growth %>% 
@@ -447,13 +484,13 @@ pogona.surv.table <- table(pogona.growth$Dead.Y.N., pogona.growth$sex)%>%
   spread(Var1, Freq)
 morality.frq <- rbind(Bassiana.surv.table, pogona.surv.table) %>% 
   dplyr::rename("Sex Class" = "Var2")
-TableS4 <- morality.frq[,c(2,3,4)]
-TableS4 <- TableS4 %>% 
+TableS7 <- morality.frq[,c(2,3,4)]
+TableS7 <- TableS7 %>% 
   mutate(Sex = c("Female XX","MaleSR XX","Male XY","Female ZW","FemaleSR ZZ", "Male ZZ"))
-TableS4 <- TableS4[,c(1,4,2,3)]
+TableS7 <- TableS7[,c(1,4,2,3)]
 
 # final table
-Tbl.S4 <-flextable(TableS4) %>% 
+Tbl.S7 <-flextable(TableS7) %>% 
   italic(i = 1:6, j = 1, italic = TRUE) %>% 
   hline(i=3, j = 1:4, part="body") %>% 
   merge_v(j = "Species") %>%  
@@ -461,5 +498,5 @@ Tbl.S4 <-flextable(TableS4) %>%
   align(align ="center", part = "all") %>% 
   font(part = "all", fontname = "Times New Roman") %>% 
   fix_border_issues() 
-knitr::knit_print(Tbl.S4)
+knitr::knit_print(Tbl.S7)
 ``` 

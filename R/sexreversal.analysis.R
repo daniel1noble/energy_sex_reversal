@@ -653,12 +653,12 @@ grid.arrange(bassiana.final.fig, pogona.final.fig, nrow = 2)
 ####################
 # growth  comparisons
 ####################
-growth <- read.csv(file = "final.analysis.data/growth.bassiana.pogona.csv") %>% 
+svl.growth <- read.csv(file = "final.analysis.data/growth.bassiana.pogona.csv") %>% 
   rename(sex = Geno.pheno)
   
 # bassiana growth
 # changing bassiana mass growth to centi-grams for table puposes
-bassiana.growth <- growth %>% 
+bassiana.growth <- svl.growth %>% 
   filter(Species == "Bassiana") %>% 
   mutate(Mass.1.cg = Mass.1.g*100 ,
          Growth.rate.mass.cg = Growth.rate.mass.*100)
@@ -768,13 +768,14 @@ bassiana_growth <- growth %>%
 pogona_final <- merge(x = pogona.data, y = pogona_growth, by = "id", all = TRUE) %>% 
   rename(sex = sex.x)
 bassiana_final <- merge(x = bassiana.data, y = bassiana_growth, by = "id", all = TRUE) %>% 
-  rename(sex = sex.x)
+  rename(sex = sex.x) %>% 
+  mutate(Growth.rate.mass.cg = Growth.rate.mass.*100)
 
 
 ######
 # pogona MR and growth analysis
 ######
-pog_o2_growth <- brm(Growth.rate.mass. ~ log(mean_02) + sex, family = "gaussian", 
+pog_o2_growth <- brm(log(mean_02)~Growth.rate.mass. ~+ sex, family = "gaussian", 
                      data = pogona_final, 
                      iter= 5000, warmup = 1000, 
                      thin = 5, cores = 8) # warning for NA's are animals that died
@@ -787,13 +788,12 @@ bayes_R2(pog_o2_growth)
 plot(conditional_effects(pog_o2_growth, "mean_02"), ask = FALSE)
 
 # save model
-saveRDS(pog_o2_growth, "./models/Pog_survival_metabolism")
-
+saveRDS(pog_o2_growth, "./models/Pog_growth_metabolism")
 
 ######
 # Bassiana
 ######
-bass_o2_growth <- brm(Growth.rate.mass. ~ log(mean_02) + sex,
+bass_o2_growth <- brm(Growth.rate.mass.cg ~ log(mean_02) + sex,
                       family = "gaussian", 
                       data = bassiana_final, 
                       iter= 5000, warmup = 1000, 
@@ -807,6 +807,32 @@ bayes_R2(bass_o2_growth)
 plot(conditional_effects(bass_o2_growth, "mean_02"), ask = FALSE)
 
 # save model
-saveRDS(bass_o2_growth, "./models/Bass_survival_metabolism")
+saveRDS(bass_o2_growth, "./models/Bass_growth_metabolism")
+
+
+######## like phenotype hypothesis extract - OLD
+# extract 
+pog_post <- posterior_samples(pog_o2_growth)
+pog_surv_brms_m1 <- posterior_samples(pog_o2_growth, pars = "^b")
+dimnames(pog_surv_brms_m1)
+
+## extracting posteriors for interaction of sex and mass
+ZWf.mass.posterior <- as.array(pog_surv_brms_m1[,"b_Intercept"])
+ZZf.mass.posterior <- as.array(ZWf.mass.posterior + pog_surv_brms_m1[,"b_sexZZf"])
+ZZm.mass.posterior <- as.array(ZWf.mass.posterior + pog_surv_brms_m1[,"b_sexZZm"])
+
+## H1: Like Phenotype Hypothesis - pMCMC
+Pog.RslopeDiff.Pheno.mass <- ZWf.mass.posterior - ZZf.mass.posterior
+Pog.pMCMC_phenotype_metabolism <- pmcmc(Pog.RslopeDiff.Pheno.mass)
+Pog.pMCMC_phenotype_metabolism
+
+## H2: Like Genotype Hypothesis - pMCMC
+Pog.RslopeDiff.Geno.mass <- ZZf.mass.posterior - ZZm.mass.posterior
+Pog.pMCMC_genotype_metabolism <- pmcmc(Pog.RslopeDiff.Geno.mass)
+Pog.pMCMC_genotype_metabolism
+
+# overall O2 on survival - high o2 high survival; dead = 0 alive = 1
+plot(conditional_effects(pog_o2_growth, "mean_02"), ask = FALSE) 
+
 
 
