@@ -234,6 +234,8 @@ XXm.SD <- data.frame(y_XX_male_SD)%>%
                 "Mean" = 2, 
                 "+1.5 SD" = 3 )%>% 
   mutate(sex = "XXm")
+
+
 ############
 # XY male SD 
 ############
@@ -253,6 +255,99 @@ bass.SD.Pred <- bass.SD %>%
          "mean" = 2 ,
          "upper" = 3)
 saveRDS(bass.SD.Pred, "final.analysis.data/Bassiana.SD.mod.dat.RDS")
+
+
+# LIKE Phenotype SD DIFFERENCES
+# +1.5 SD contrasts
+contrats_1.5SD = XXm.SD[,3] - XYm.SD[,3]
+contrats_1.5SD_male <- as.array(contrats_1.5SD)
+bass_mean_upper <- mean(contrats_1.5SD)
+bass_error_upper <- round(quantile(contrats_1.5SD, c(0.025, 0.975)), digits = 2)
+bass_LikeP_pmcmc_upper <- Bass_likeP_upper<-pmcmc(contrats_1.5SD_male)
+bass_likeP_upper_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_likeP_upper_tbl[1,1] <- "Like Phenotype +1.5"
+bass_likeP_upper_tbl[1,2] <- round(bass_mean_upper, digits = 2)
+bass_likeP_upper_tbl[1,3] <- "(-0.19 - 0.23)"
+bass_likeP_upper_tbl[1,4] <- round(bass_LikeP_pmcmc_upper, digits = 2)
+# mean contrasts
+bass_contrats_mean = XXm.SD[,2] - XYm.SD[,2]
+contrats_mean_male <- as.array(bass_contrats_mean)
+bass_error_mean <- mean(bass_contrats_mean)
+bass_error_upper <- round(quantile(bass_contrats_mean, c(0.025, 0.975)), digits = 2)
+bass_LikeP_pmcmc_mean <- round(pmcmc(contrats_mean_male), digits = 2)
+bass_likeP_mean_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_likeP_mean_tbl[1,1] <- "Like Phenotype mean"
+bass_likeP_mean_tbl[1,2] <- round(bass_error_mean, digits = 2)
+bass_likeP_mean_tbl[1,3] <- "(-0.21 - 0.15)"
+bass_likeP_mean_tbl[1,4] <- round(bass_LikeP_pmcmc_mean, digits = 2)
+# -1.5 SD contrasts
+contrats_lower = XXm.SD[,1] - XYm.SD[,1]
+contrats_lower_male <- as.array(contrats_lower)
+bass_error_lower_mean <- mean(contrats_lower)
+bass_error_lower <- round(quantile(contrats_lower, c(0.025, 0.975)), digits = 2)
+bass_error_lower_pmcmc <-  pmcmc(contrats_lower_male)
+bass_likeP_lower_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_likeP_lower_tbl[1,1] <- "Like Phenotype -1.5"
+bass_likeP_lower_tbl[1,2] <- round(bass_error_lower_mean, digits = 2)
+bass_likeP_lower_tbl[1,3] <- "(-0.29 - 0.13)"
+bass_likeP_lower_tbl[1,4] <- round(bass_error_lower_pmcmc, digits = 2)
+# rbind bass like Phenotype
+bass_contrast_errors_LikeP <- rbind(bass_likeP_lower_tbl, 
+                              bass_likeP_mean_tbl, 
+                              bass_likeP_upper_tbl) %>% 
+  dplyr::rename(Hypothesis = X1,
+                Estimate = X2,
+                "Estimate error" = X3,
+                "Estimate pMCMC" = X4)
+
+# LIKE Genotype SD DIFFERENCES
+# +1.5 SD contrasts
+bass_contrats_upper = XXm.SD[,3] - XXf.SD[,3]
+bass_contrats_upper_genotype <- as.array(bass_contrats_upper)
+bass_LikeG_upper_mean <- mean(bass_contrats_upper)
+bass_LikeG_upper_mean_error <- round(quantile(bass_contrats_upper, c(0.025, 0.975)), digits = 2)
+bass_likeG_upper_pmcmc<-pmcmc(bass_contrats_upper_genotype)
+bass_LikeG_upper_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_LikeG_upper_tbl[1,1] <- "Like Genotype +1.5"
+bass_LikeG_upper_tbl[1,2] <- round(bass_LikeG_upper_mean, digits = 2)
+bass_LikeG_upper_tbl[1,3] <- "(-0.50 - -0.11)"
+bass_LikeG_upper_tbl[1,4] <- round(bass_likeG_upper_pmcmc, digits = 2)
+# mean contrasts
+bass_contrats_mean = XXm.SD[,2] - XXf.SD[,2]
+bass_contrats_mean_genotype <- as.array(bass_contrats_mean)
+bass_LikeG_mean<- mean(bass_contrats_mean)
+bass_LikeG_mean_error <- round(quantile(bass_contrats_mean, c(0.025, 0.975)), digits = 2)
+bass_likeG_mean_pmcmc<-pmcmc(bass_contrats_mean_genotype)
+bass_LikeG_mean_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_LikeG_mean_tbl[1,1] <- "Like Genotype mean"
+bass_LikeG_mean_tbl[1,2] <- round(bass_LikeG_mean, digits = 2)
+bass_LikeG_mean_tbl[1,3] <- "(-0.32 - 0.02)"
+bass_LikeG_mean_tbl[1,4] <- round(bass_likeG_mean_pmcmc, digits = 2)
+# -1.5 SD contrasts
+bass_contrats_lower = XXm.SD[,1] - XXf.SD[,1]
+bass_contrats_lower_genotype <- as.array(bass_contrats_lower)
+bass_LikeG_lower <- mean(bass_contrats_lower)
+bass_LikeG_lower_error <- round(quantile(bass_contrats_lower, c(0.025, 0.975)), digits = 2)
+bass_likeG_lower_pmcmc<-pmcmc(bass_contrats_lower_genotype)
+bass_LikeG_lower_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+bass_LikeG_lower_tbl[1,1] <- "Like Genotype -1.5"
+bass_LikeG_lower_tbl[1,2] <- round(bass_LikeG_lower, digits = 2)
+bass_LikeG_lower_tbl[1,3] <- "(-0.19  - 0.21)"
+bass_LikeG_lower_tbl[1,4] <- round(bass_likeG_lower_pmcmc, digits = 2)
+# rbind
+# rbind bass like Phenotype
+bass_contrast_errors_LikeG <- rbind(bass_LikeG_lower_tbl, 
+                                    bass_LikeG_mean_tbl, 
+                                    bass_LikeG_upper_tbl) %>% 
+  dplyr::rename(Hypothesis = X1,
+                Estimate = X2,
+                "Estimate error" = X3,
+                "Estimate pMCMC" = X4)
+
+# final contrast df for likeG or LikeP 
+bass_error_contrast_fig2 <- rbind(bass_contrast_errors_LikeP,
+                                  bass_contrast_errors_LikeG) %>% 
+  mutate(Species = "Bassiana duperreyi")
 
 
 ############## 
@@ -275,7 +370,6 @@ bass.raw.summary <- bassiana.data2 %>%
          sd = sqrt(d),
          mass.se = sd/(sqrt(2))) %>% 
   dplyr::select(-a,-b,-c,-d)
-
 
 #############
 # body mass differences test
@@ -473,6 +567,9 @@ mcmc_areas(pog.dat,
   theme(legend.title = element_text(colour="white", size = 16, face='bold')) +
   labs(y = TeX("Sex class"), x = "Slope") 
 
+# combined predictions
+pog.mannual.pred <- rbind(ZZm.man.pred, ZZf.man.pred, ZWf.man.pred)
+
 
 ####################  
 # manual predict values for regression lines - Figure 2C
@@ -512,9 +609,6 @@ Q97.5 <- apply(y_ZZ_male, 2, function(x) quantile(x, probs = 0.975))
 Est.Error <- apply(y_ZZ_male, 2, function(x) sd(x))
 ZZm.man.pred <- data.frame(logMass, Estimate, Est.Error, Q2.5, Q97.5)%>% 
   mutate(sex = "ZZm")
-# combined predictions
-pog.mannual.pred <- rbind(ZZm.man.pred, ZZf.man.pred, ZWf.man.pred)
-
 
 ############## 
 # df for summarizing raw datapoints for Figure 2C
@@ -588,6 +682,7 @@ ZZm.SD <- data.frame(y_ZZ_male_SD) %>%
                 "Mean" = 2, 
                 "+1.5 SD" = 3 )%>% 
   mutate(sex = "ZZ_Male")
+
 # combine predictions and save for analysis
 Pog.SD <- rbind(ZWf.SD, ZZf.SD, ZZm.SD)
 Pog.SD.Pred <- Pog.SD %>% 
@@ -595,6 +690,103 @@ Pog.SD.Pred <- Pog.SD %>%
                 "Mean_predict" = 2 ,
                 "+1.5_SD_predict" = 3)
 saveRDS(Pog.SD.Pred, "final.analysis.data/PogonaSD.mod.dat.RDS")
+
+# LIKE Phenotype SD DIFFERENCES
+# +1.5 SD contrasts
+pog_contrats_upper = ZZf.SD[,3] - ZWf.SD[,3]
+pog_contrats_upper_genotype <- as.array(pog_contrats_upper)
+pog_LikeP_upper_mean <- mean(pog_contrats_upper)
+pog_LikeP_upper_mean_error <- round(quantile(pog_contrats_upper, c(0.025, 0.975)), digits = 2)
+pog_LikeP_upper_pmcmc<-pmcmc(pog_contrats_upper_genotype)
+pog_LikeP_upper_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeP_upper_tbl[1,1] <- "Like Phenotype +1.5"
+pog_LikeP_upper_tbl[1,2] <- round(pog_LikeP_upper_mean, digits = 2)
+pog_LikeP_upper_tbl[1,3] <- "(-0.37 - -0.03)"
+pog_LikeP_upper_tbl[1,4] <- round(pog_LikeP_upper_pmcmc, digits = 2)
+# mean contrasts
+pog_contrats_mean = ZZf.SD[,2] - ZWf.SD[,2]
+pog_contrats_mean_genotype <- as.array(pog_contrats_mean)
+pog_LikeP_mean<- mean(pog_contrats_mean)
+pog_LikeP_mean_error <- round(quantile(pog_contrats_mean, c(0.025, 0.975)), digits = 2)
+pog_LikeP_mean_pmcmc<-pmcmc(pog_contrats_mean_genotype)
+pog_LikeP_mean_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeP_mean_tbl[1,1] <- "Like Phenotype mean"
+pog_LikeP_mean_tbl[1,2] <- round(pog_LikeP_mean, digits = 2)
+pog_LikeP_mean_tbl[1,3] <- "(-0.28 - 0.03)"
+pog_LikeP_mean_tbl[1,4] <- round(pog_LikeP_mean_pmcmc, digits = 2)
+# -1.5 SD contrasts
+pog_contrats_lower = ZZf.SD[,1] - ZWf.SD[,1]
+pog_contrats_lower_genotype <- as.array(pog_contrats_lower)
+pog_LikeP_lower <- mean(pog_contrats_lower)
+pog_LikeP_lower_error <- round(quantile(pog_contrats_lower, c(0.025, 0.975)), digits = 2)
+pog_LikeP_lower_pmcmc<-pmcmc(pog_contrats_lower_genotype)
+pog_LikeP_lower_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeP_lower_tbl[1,1] <- "Like Phenotype -1.5"
+pog_LikeP_lower_tbl[1,2] <- round(pog_LikeP_lower, digits = 2)
+pog_LikeP_lower_tbl[1,3] <- "(-0.23  - 0.11)"
+pog_LikeP_lower_tbl[1,4] <- round(pog_LikeP_lower_pmcmc, digits = 2)
+# rbind bass like Phenotype
+pog_contrast_errors_LikeP <- rbind(pog_LikeP_lower_tbl, 
+                                    pog_LikeP_mean_tbl, 
+                                    pog_LikeP_upper_tbl) %>% 
+  dplyr::rename(Hypothesis = X1,
+                Estimate = X2,
+                "Estimate error" = X3,
+                "Estimate pMCMC" = X4)
+
+# LIKE Genotype SD DIFFERENCES
+# +1.5 SD contrasts
+pog_contrats_upper = ZZf.SD[,3] - ZZm.SD[,3]
+pog_contrats_upper_genotype <- as.array(pog_contrats_upper)
+pog_LikeG_upper_mean <- mean(pog_contrats_upper)
+pog_LikeG_upper_mean_error <- round(quantile(pog_contrats_upper, c(0.025, 0.975)), digits = 2)
+pog_LikeG_upper_pmcmc<-pmcmc(pog_contrats_upper_genotype)
+pog_LikeG_upper_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeG_upper_tbl[1,1] <- "Like Genotype +1.5"
+pog_LikeG_upper_tbl[1,2] <- round(pog_LikeG_upper_mean, digits = 2)
+pog_LikeG_upper_tbl[1,3] <- "(-0.12 - 0.19)"
+pog_LikeG_upper_tbl[1,4] <- round(pog_LikeG_upper_pmcmc, digits = 2)
+# mean contrasts
+pog_contrats_mean = ZZf.SD[,2] - ZZm.SD[,2]
+pog_contrats_mean_genotype <- as.array(pog_contrats_mean)
+pog_LikeG_mean<- mean(pog_contrats_mean)
+pog_LikeG_mean_error <- round(quantile(pog_contrats_mean, c(0.025, 0.975)), digits = 2)
+pog_LikeG_mean_pmcmc<-pmcmc(pog_contrats_mean_genotype)
+pog_LikeG_mean_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeG_mean_tbl[1,1] <- "Like Genotype mean"
+pog_LikeG_mean_tbl[1,2] <- round(pog_LikeG_mean, digits = 2)
+pog_LikeG_mean_tbl[1,3] <- "(-0.20 - 0.09)"
+pog_LikeG_mean_tbl[1,4] <- round(pog_LikeG_mean_pmcmc, digits = 2)
+# -1.5 SD contrasts
+pog_contrats_lower = ZZf.SD[,1] - ZZm.SD[,1]
+pog_contrats_lower_genotype <- as.array(pog_contrats_lower)
+pog_LikeG_lower <- mean(pog_contrats_lower)
+pog_LikeG_lower_error <- round(quantile(pog_contrats_lower, c(0.025, 0.975)), digits = 2)
+pog_LikeG_lower_pmcmc<-pmcmc(pog_contrats_lower_genotype)
+pog_LikeG_lower_tbl <- data.frame(matrix(ncol = 4, nrow = 1))
+pog_LikeG_lower_tbl[1,1] <- "Like Genotype -1.5"
+pog_LikeG_lower_tbl[1,2] <- round(pog_LikeG_lower, digits = 2)
+pog_LikeG_lower_tbl[1,3] <- "(-0.31  - 0.00)"
+pog_LikeG_lower_tbl[1,4] <- round(pog_LikeG_lower_pmcmc, digits = 2)
+# rbind Pog like Genotype
+pog_contrast_errors_LikeG <- rbind(pog_LikeG_lower_tbl, 
+                                   pog_LikeG_mean_tbl, 
+                                   pog_LikeG_upper_tbl) %>% 
+  dplyr::rename(Hypothesis = X1,
+                Estimate = X2,
+                "Estimate error" = X3,
+                "Estimate pMCMC" = X4)
+
+# final contrast df for likeG or LikeP 
+pog_error_contrast_fig2 <- rbind(pog_contrast_errors_LikeP,
+                                  pog_contrast_errors_LikeG) %>% 
+  mutate(Species = "Pogona vitticeps")
+
+# rbind error for results section
+figure_2B_2D_contrast_tbl <- rbind(bass_error_contrast_fig2,
+                                   pog_error_contrast_fig2)
+
+saveRDS(figure_2B_2D_contrast_tbl, file = "final.analysis.data/figure_2B_2D_contrast_tbl")
 
 
 ####################
@@ -651,43 +843,111 @@ grid.arrange(bassiana.final.fig, pogona.final.fig, nrow = 2)
 
 
 ####################
-# growth  comparisons
+# growth  comparisons when accounting 
 ####################
-svl.growth <- read.csv(file = "final.analysis.data/growth.bassiana.pogona.csv") %>% 
-  rename(sex = Geno.pheno)
-  
-# bassiana growth
-# changing bassiana mass growth to centi-grams for table puposes
-bassiana.growth <- svl.growth %>% 
-  filter(Species == "Bassiana") %>% 
-  mutate(Mass.1.cg = Mass.1.g*100 ,
-         Growth.rate.mass.cg = Growth.rate.mass.*100)
-
-# 1) SVL
-Bass.svl.mod <- brm(Growth.rate.SVL. ~ sex * SVL.1.mm , data = bassiana.growth, iter= 5000, warmup = 1000, 
-                    thin = 5, cores = 4)
-summary(Bass.svl.mod)
-saveRDS(Bass.svl.mod, file = "models/Bass.svl.growth.mod")
-#2) MASS
-Bass.Mass.mod <- brm(Growth.rate.mass.cg ~ sex * Mass.1.cg , data = bassiana.growth, iter= 5000, warmup = 1000, 
-                     thin = 5, cores = 4)
-summary(Bass.Mass.mod)
-saveRDS(Bass.Mass.mod, file = "models/Bass.Mass.growth.mod")
-
-# Pogona growth
-##### 
-pogona.growth <- growth %>% 
+##########
+# MR and growth rate
+#########
+# filter data with growth and MR and summarize MR
+# O2 - Pogona
+pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  rename(day =date.dd.mm.yy.,
+         time = marker_sample,
+         id = bd_liz_id, 
+         O2_min = Final_MR_O2_min,
+         sex = Geno.pheno,
+         mass_g = mass, 
+         ) %>% 
+  group_by(id, sex) %>% 
+  summarise(mean_02 = mean(O2_min))
+# O2 - Bassiana
+bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
+  rename(day =date.dd.mm.yy.,
+         time = marker_sample,
+         id = bd_liz_id, 
+         O2_min = Final_MR_O2_min,
+         sex = Geno.pheno,
+         mass_g = mass) %>% 
+  group_by(id, sex) %>% 
+  summarise(mean_02 = mean(O2_min))
+# growth & survival data both spp
+growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
+  dplyr::rename(sex = Geno.pheno, 
+                id = ID)
+growth$status <- ifelse(growth$Dead.Y.N. == "Alive", 1, 0)
+pogona_growth <- growth %>% 
   filter(Species == "Pogona")
-# 1) SVL
-Pog.svl.mod <- brm(Growth.rate.SVL. ~ sex * SVL.1.mm , data = pogona.growth, iter= 5000, warmup = 1000, 
-                   thin = 5, cores = 4)
-summary(Pog.svl.mod)
-saveRDS(Pog.svl.mod, file = "models/Pog.svl.growth.mod")
-# 2) MASS
-Pog.Mass.mod <- brm(Growth.rate.mass. ~ sex * Mass.1.g , data = pogona.growth, iter= 5000, warmup = 1000, 
-                    thin = 5, cores = 4)
-summary(Pog.Mass.mod)
-saveRDS(Pog.Mass.mod, file = "models/Pog.Mass.growth.mod")
+bassiana_growth <- growth %>% 
+  filter(Species == "Bassiana")
+# merge data
+pogona_final <- merge(x = pogona.data, y = pogona_growth, by = "id", all = TRUE) %>% 
+  rename(sex = sex.x)
+bassiana_final <- merge(x = bassiana.data, y = bassiana_growth, by = "id", all = TRUE) %>% 
+  rename(sex = sex.x) %>% 
+  mutate(Growth.rate.mass.cg = Growth.rate.mass.*100)
+
+
+######
+# pogona MR and growth analysis mass 
+######
+pog_o2_growth_mass <- brm(log(mean_02)~Growth.rate.mass.*sex , family = "gaussian", 
+                     data = pogona_final, 
+                     iter= 5000, warmup = 1000, 
+                     thin = 5, cores = 8) # warning for NA's are animals that died
+# assumption plot checks
+plot(pog_o2_growth_mass)
+# summary & r2
+summary(pog_o2_growth_mass)
+bayes_R2(pog_o2_growth_mass)
+# save model
+saveRDS(pog_o2_growth_mass, "./models/Pog_growth_mass_metabolism")
+
+# pogona MR and growth analysis SVL 
+pog_o2_growth_svl <- brm(log(mean_02)~Growth.rate.SVL.*sex , family = "gaussian", 
+                          data = pogona_final, 
+                          iter= 5000, warmup = 1000, 
+                          thin = 5, cores = 8) # warning for NA's are animals that died
+# assumption plot checks
+plot(pog_o2_growth_svl)
+# summary & r2
+summary(pog_o2_growth_svl)
+bayes_R2(pog_o2_growth_svl)
+# save model
+saveRDS(pog_o2_growth_svl, "./models/Pog_growth_svl_metabolism")
+
+
+######
+# Bassiana
+######
+# mass growth
+bass_o2_growth_mass <- brm(log(mean_02)~ Growth.rate.mass.cg  * sex,
+                      family = "gaussian", 
+                      data = bassiana_final, 
+                      iter= 5000, warmup = 1000, 
+                      thin = 5, cores = 8) # warning for NA's are animals that died
+
+# assumption plot checks
+plot(bass_o2_growth_mass)
+# summary & r2
+summary(bass_o2_growth_mass)
+bayes_R2(bass_o2_growth_mass)
+# save model
+saveRDS(bass_o2_growth_mass, "./models/Bass_growth_mass_metabolism")
+# SVL
+bass_o2_growth_svl <- brm(log(mean_02)~Growth.rate.SVL.  * sex,
+                           family = "gaussian", 
+                           data = bassiana_final, 
+                           iter= 5000, warmup = 1000, 
+                           thin = 5, cores = 8) # warning for NA's are animals that died
+
+# assumption plot checks
+plot(bass_o2_growth_svl)
+# summary & r2
+summary(bass_o2_growth_svl)
+bayes_R2(bass_o2_growth_svl)
+
+# save model
+saveRDS(bass_o2_growth_svl, "./models/Bass_growth_svl_metabolism")
 
 ####################
 # Chisqure for mortality comparisons: summary,  analysis and figures for each species
@@ -731,83 +991,19 @@ pog.mortality <- ggplot(Pogona_chi_sq_final, aes(fill=sex, y=n, x=Dead.Y.N.)) +
 grid.arrange(bass.mortality, pog.mortality, nrow = 2)
 
 
-##########
-# MR and growth rate
-#########
-# filter data with growth and MR and summarize MR
-# O2 - Pogona
-pogona.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Pogona.finalO2.sexreversal.analysis.data.clean.csv") %>% 
-  rename(day =date.dd.mm.yy.,
-         time = marker_sample,
-         id = bd_liz_id, 
-         O2_min = Final_MR_O2_min,
-         sex = Geno.pheno,
-         mass_g = mass) %>% 
-  group_by(id, sex) %>% 
-  summarise(mean_02 = mean(O2_min))
-# O2 - Bassiana
-bassiana.data <- read.csv("~/Dropbox/energy_sex_reversal/final.analysis.data/Bassiana.finalO2.sexreversal.analysis.data.clean.csv") %>% 
-  rename(day =date.dd.mm.yy.,
-         time = marker_sample,
-         id = bd_liz_id, 
-         O2_min = Final_MR_O2_min,
-         sex = Geno.pheno,
-         mass_g = mass) %>% 
-  group_by(id, sex) %>% 
-  summarise(mean_02 = mean(O2_min))
-# growth & survival data both spp
-growth <- read.csv(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/growth.bassiana.pogona.csv") %>% 
-  dplyr::rename(sex = Geno.pheno, 
-                id = ID)
-growth$status <- ifelse(growth$Dead.Y.N. == "Alive", 1, 0)
-pogona_growth <- growth %>% 
-  filter(Species == "Pogona")
-bassiana_growth <- growth %>% 
-  filter(Species == "Bassiana")
-# merge data
-pogona_final <- merge(x = pogona.data, y = pogona_growth, by = "id", all = TRUE) %>% 
-  rename(sex = sex.x)
-bassiana_final <- merge(x = bassiana.data, y = bassiana_growth, by = "id", all = TRUE) %>% 
-  rename(sex = sex.x) %>% 
-  mutate(Growth.rate.mass.cg = Growth.rate.mass.*100)
 
 
-######
-# pogona MR and growth analysis
-######
-pog_o2_growth <- brm(log(mean_02)~Growth.rate.mass. ~+ sex, family = "gaussian", 
-                     data = pogona_final, 
-                     iter= 5000, warmup = 1000, 
-                     thin = 5, cores = 8) # warning for NA's are animals that died
-# assumption plot checks
-plot(pog_o2_growth)
-# summary & r2
-summary(pog_o2_growth)
-bayes_R2(pog_o2_growth)
-# overall O2 on growth - slight positive relationship with high MR and high GR
-plot(conditional_effects(pog_o2_growth, "mean_02"), ask = FALSE)
 
-# save model
-saveRDS(pog_o2_growth, "./models/Pog_growth_metabolism")
 
-######
-# Bassiana
-######
-bass_o2_growth <- brm(Growth.rate.mass.cg ~ log(mean_02) + sex,
-                      family = "gaussian", 
-                      data = bassiana_final, 
-                      iter= 5000, warmup = 1000, 
-                      thin = 5, cores = 8) # warning for NA's are animals that died
-# assumption plot checks
-plot(bass_o2_growth)
-# summary & r2
-summary(bass_o2_growth)
-bayes_R2(bass_o2_growth)
-# overall O2 on grwoth
-plot(conditional_effects(bass_o2_growth, "mean_02"), ask = FALSE)
 
-# save model
-saveRDS(bass_o2_growth, "./models/Bass_growth_metabolism")
+
+
+
+
+
+
+
+
 
 
 ######## like phenotype hypothesis extract - OLD

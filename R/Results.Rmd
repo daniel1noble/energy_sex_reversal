@@ -384,54 +384,54 @@ Bass.MR.df <- rbind(Bass.Pheno.MR.post, Bass.Geno.MR.post) %>% mutate(Test = "Lo
 
 # - growth
 # 1) SVL
-Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.svl.growth.mod")
+Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_svl_metabolism")
 # extract for posteriors values to test like phenotype and like genotype hypothesis
 post_Bass_SVLgrowth <- posterior_samples(Bass.svl.mod, pars = "^b")
 ## extracting posteriors for just sex
-XXf.SVL.Growth.posterior <- as.array( post_Bass_SVLgrowth[,"b_SVL.1.mm"])
-XXm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXXm:SVL.1.mm"]) # sex reversed
-XYm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_sexXYm:SVL.1.mm"])
+XXf.SVL.Growth.posterior <- as.array( post_Bass_SVLgrowth[,"b_Growth.rate.SVL."])
+XXm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_Growth.rate.SVL.:sexXXm"]) # sex reversed
+XYm.SVL.Growth.posterior <- as.array(XXf.SVL.Growth.posterior +  post_Bass_SVLgrowth[,"b_Growth.rate.SVL.:sexXYm"])
 # H1: Like Phenotype Hypothesis
 Bass.Pheno.SVL <- XXm.SVL.Growth.posterior - XYm.SVL.Growth.posterior
 Bass.Pheno.SVL.post <- describe_posterior(Bass.Pheno.SVL, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# pmcmc value 0.29
+# pmcmc value 0.53
 Bass.Pheno.SVL.post.pmcmc <- pmcmc(Bass.Pheno.SVL)
-Bass.Pheno.SVL.post$"pMCMC Value" = "0.29"
+Bass.Pheno.SVL.post$"pMCMC Value" = "0.52"
 Bass.Pheno.SVL.post[1,1] = "MaleSR XX-Male XY"
 # H2: Like Genotype Hypothesis
 Bass.Geno.SVL <- XXm.SVL.Growth.posterior - XXf.SVL.Growth.posterior
 Bass.Geno.SVL.post <- describe_posterior(Bass.Geno.SVL, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pmcmc value <0.39
+# "pmcmc value <0.47
 Bass.Geno.SVL.post.pmcmc  <- pmcmc(Bass.Geno.SVL)
-Bass.Geno.SVL.post$"pMCMC Value" = "0.39"
+Bass.Geno.SVL.post$"pMCMC Value" = "0.47"
 Bass.Geno.SVL.post[1,1] = "MaleSR XX-Female XX"
 # final SVL df
 Bass.SVL.df <- rbind(Bass.Pheno.SVL.post, Bass.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
 
-#2) MASS
-Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.Mass.growth.mod")
+#2) MASS - in centigrams
+Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_mass_metabolism")
 post_Bass_Massgrowth <- posterior_samples(Bass.Mass.mod, pars = "^b")
 ## extracting posteriors for just sex
-XXf.Mass.Growth.posterior <- as.array(post_Bass_Massgrowth[,"b_Mass.1.cg"])
-XXm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXXm:Mass.1.cg"]) # sex reversed
-XYm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_sexXYm:Mass.1.cg"])
+XXf.Mass.Growth.posterior <- as.array(post_Bass_Massgrowth[,"b_Growth.rate.mass.cg"])
+XXm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_Growth.rate.mass.cg:sexXXm"]) # sex reversed
+XYm.Mass.Growth.posterior <- as.array(XXf.Mass.Growth.posterior +  post_Bass_Massgrowth[,"b_Growth.rate.mass.cg:sexXYm"])
 # H1: Like Phenotype Hypothesis
 Bass.Pheno.Mass <- XXm.Mass.Growth.posterior - XYm.Mass.Growth.posterior
 Bass.Pheno.Mass.post <- describe_posterior(Bass.Pheno.Mass, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pmcmc value" 0.73
+# "pmcmc value" 0.845
 Bass.Pheno.Mass.post.pmcmc <- pmcmc(Bass.Pheno.Mass)
-Bass.Pheno.Mass.post$"pMCMC Value" = "0.73"
+Bass.Pheno.Mass.post$"pMCMC Value" = "0.85"
 Bass.Pheno.Mass.post[1,1] = "MaleSR XX-Male XY"
 # H2: Like Genotype Hypothesis
 Bass.Geno.Mass <- XXm.Mass.Growth.posterior - XXf.Mass.Growth.posterior
 Bass.Geno.Mass.post <- describe_posterior(Bass.Geno.Mass, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pMCMC Value"" 0.24
+# "pMCMC Value"" 0.176
 Bass.Geno.Mass.post.pmcmc <- pmcmc(Bass.Geno.Mass)
-Bass.Geno.Mass.post$"pMCMC Value" = "0.24"
+Bass.Geno.Mass.post$"pMCMC Value" = "0.18"
 Bass.Geno.Mass.post[1,1] = "MaleSR XX-Female XX"
 # final MR df
 Bass.Mass.df <- rbind(Bass.Pheno.Mass.post, Bass.Geno.Mass.post) %>% mutate(Test = "Mass (cg/d)")
@@ -466,27 +466,27 @@ Pog.MR.df <- rbind(Pog.Pheno.MR.post, Pog.Geno.MR.post) %>% mutate(Test = "Log M
 
 # - Growth
 # 1) SVL
-Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.svl.growth.mod")
+Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_svl_metabolism")
 post_Pog_SVLgrowth <- posterior_samples(Pog.svl.mod, pars = "^b")
 ## extracting posteriors for just sex
-ZWf.SVL.Growth.posterior <- as.array( post_Pog_SVLgrowth[,"b_SVL.1.mm"])
-ZZf.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZf:SVL.1.mm"]) # sex reversed
-ZZm.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_sexZZm:SVL.1.mm"])
+ZWf.SVL.Growth.posterior <- as.array( post_Pog_SVLgrowth[,"b_Growth.rate.SVL."])
+ZZf.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_Growth.rate.SVL.:sexZZf"]) # sex reversed
+ZZm.SVL.Growth.posterior <- as.array(ZWf.SVL.Growth.posterior +  post_Pog_SVLgrowth[,"b_Growth.rate.SVL.:sexZZm"])
 # H1: Like Phenotype Hypothesis
 Pog.Pheno.SVL <- ZZf.SVL.Growth.posterior - ZWf.SVL.Growth.posterior
 Pog.Pheno.SVL.post <- describe_posterior(Pog.Pheno.SVL, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pMCMC Value" 0.94
+# "pMCMC Value" 0.37
 Pog.Pheno.SVL.post.pmcmc <- pmcmc(Pog.Pheno.SVL)
-Pog.Pheno.SVL.post$"pMCMC Value" = "0.94"
+Pog.Pheno.SVL.post$"pMCMC Value" = "0.37"
 Pog.Pheno.SVL.post[1,1] = "FemaleSR ZZ-Female ZW"
 # H2: Like Genotype Hypothesis
 Pog.Geno.SVL <- ZZf.SVL.Growth.posterior - ZZm.SVL.Growth.posterior
 Pog.Geno.SVL.post <- describe_posterior(Pog.Geno.SVL, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pMCMC Value = 0.48
+# "pMCMC Value = 0.43
 Pog.Geno.SVL.post.pd <- pmcmc(Pog.Geno.SVL)
-Pog.Geno.SVL.post$"pMCMC Value" = "0.48"
+Pog.Geno.SVL.post$"pMCMC Value" = "0.43"
 Pog.Geno.SVL.post[1,1] = "FemaleSRZZ-Male ZZ"
 # final SVL df
 Pog.SVL.df <- rbind(Pog.Pheno.SVL.post, Pog.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
