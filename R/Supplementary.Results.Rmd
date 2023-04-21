@@ -161,13 +161,13 @@ pmcmc.geno.mass.m2 <- as.data.frame(pmcmc(Pog.Geno.mass.diff.m2))
 \newpage
 # Tables & Figures
 ```{r Fig1,echo=FALSE, results='asis'}
-knitr::include_graphics("./Final.Figures/FigS1")
+knitr::include_graphics("./Final.Figures/FigS1.pdf")
 ```
 Figure S1. 
 \newpage
 # Tables & Figures
-```{r Fig1,echo=FALSE, results='asis'}
-knitr::include_graphics("./Final.Figures/FigS2")
+```{r Fig1.1,echo=FALSE, results='asis'}
+knitr::include_graphics("./Final.Figures/FigS2.pdf")
 ```
 Figure S2. Comparison of log standard metabolic rate (V̇$_{02}$ mL min$^{-1}$) across log body mass (g) by sex class for *Bassiana duperreyi* (A-B) and *Pogona vitticeps* (C-D). Sex-reversed individuals  (male$_{SR}$ XX or female$_{SR}$ ZZ) are denoted by red colour, phenotypic females (female XX or female ZW) are denoted in black, phenotypic males (male XY or male ZZ) are denoted in blue. Fitted lines were obtained from predicted values from the brms model for each species and confidence bands were constructed from the SE of prediction values for each sex (A,C). Density plots above each regression plot denote the distribution in body mass (log mass) by sex for each species. To visualize how log metabolic rate changes across log body mass, panels (B and D) show the distribution of predicted metabolic rate at three areas of log body mass (mean, +1.5SD, and -1.5SD) denoted by the dash-dot line in panels A and C for each sex and species.
 
@@ -229,9 +229,28 @@ Tbl.2 <-flextable(Table2) %>%
 knitr::knit_print(Tbl.2)
 ```
 
+Table S2. Model coefficients form hetero testing whether sex affects the slope of metabolic rate for *Pogona vitticeps*, which heteroscedasticity was accounted for within the data. The intercept is concordant females. Metabolic rate and mass were log transformed and time was z-transformed. Columns l-95% CI and u-95% CI, are the lower and upper bound of the 95% credible interval for each parameter, estimated from the posterior distribution.
+```{r TableS3,echo= FALSE}
+# Tabulate the model coefficients - Pogona Heteroscedasticity model
+Contrasts <- readRDS(file = "~/Dropbox/energy_sex_reversal/final.analysis.data/figure_2B_2D_contrast_tbl")
+TableC  <-  Contrasts[,c(5,1,2,3,4)]
+# Table2 Final table
+Tbl.3 <-flextable(TableC) %>%  
+  italic(i = 1:12, j = 1, italic = TRUE) %>%
+  hline(i=6, j = 1:5, part="body") %>% 
+  merge_v(j = "Species") %>%  
+  autofit(part = "all") %>% 
+  align(align ="center", part = "all") %>% 
+  font(part = "all", fontname = "Times New Roman") %>% 
+  fix_border_issues() 
+knitr::knit_print(Tbl.3)
+```
+
+
+
 \newpage
-Table S3. BBRMS model coefficients for each respective species when testing mass differences across sex class for animals used in respirometry experiments. Mass was log-transformed and lower and upper bounds were derived from the 95% credible interval for each parameter, estimated from the posterior samples.
-```{r TableS3,echo= FALSE,  warning=FALSE}
+Table S4. BBRMS model coefficients for each respective species when testing mass differences across sex class for animals used in respirometry experiments. Mass was log-transformed and lower and upper bounds were derived from the 95% credible interval for each parameter, estimated from the posterior samples.
+```{r TableS4,echo= FALSE,  warning=FALSE}
 # bring in, combined and rename tables
 bass.bodymass <- readRDS("~/Dropbox/energy_sex_reversal/models/Bas_bodymass")
 Bassiana.mass.table <- bass.bodymass %>%
@@ -341,35 +360,35 @@ knitr::knit_print(Tbl.S1)
 ```
 
 \newpage
-Table S4. BRMS Model coefficients for SVL and mass growth rate estimates across sex class *Bassiana duperreyi*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Due to the small size and rate of change in grams, mass was converted to centigrams (cg). Animals were remeasured between 3 and 6 months post hatch.
-```{r TableS4, echo=FALSE}
+Table S5. BRMS Model coefficients for SVL and mass growth rate estimates across sex class *Bassiana duperreyi*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Due to the small size and rate of change in grams, mass was converted to centigrams (cg). Animals were remeasured between 3 and 6 months post hatch.
+```{r TableS5, echo=FALSE}
 ###
 # Bassiana Growth
 # 1) SVL
-Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.svl.growth.mod")
+Bass.svl.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_svl_metabolism")
 Bass.svl.tbl <- lazerhawk::brms_SummaryTable(Bass.svl.mod)
-Bass.svl.tbl[1,1] <- "Intercept (SexFemaleXX)"
-Bass.svl.tbl[2,1] <- "SexMaleSRXX"
-Bass.svl.tbl[3,1] <- "SexMaleXY"
-Bass.svl.tbl[4,1] <- "SVL(mm)"
-Bass.svl.tbl[5,1] <- "SexMaleSRXX:SVL(mm)"
-Bass.svl.tbl[6,1] <- "SexMaleXY:SVL(mm)"
+Bass.svl.tbl[1,1] <- "Intercept (O2_SexFemaleXX)"
+Bass.svl.tbl[2,1] <- "Growth Rate (SVLmm)"
+Bass.svl.tbl[3,1] <- "O2_SexMaleSRXX"
+Bass.svl.tbl[4,1] <- "O2_SexMaleXY"
+Bass.svl.tbl[5,1] <- "Growth Rate (SVLmm):O2_SexMaleSRXX"
+Bass.svl.tbl[6,1] <- "Growth Rate (SVLmm):O2_SexMaleXY"
 Bass.svl.tbl <- Bass.svl.tbl %>% mutate("Species" = "B. duperreyi", "Growth rate" = "SVL(mm/d)")
 
 #2) MASS
-Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass.Mass.growth.mod")
+Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_mass_metabolism")
 Bass.mass.tbl <- lazerhawk::brms_SummaryTable(Bass.Mass.mod)
-Bass.mass.tbl[1,1] <- "Intercept (SexFemaleXX)"
-Bass.mass.tbl[2,1] <- "SexMaleSRXX"
-Bass.mass.tbl[3,1] <- "SexMaleXY"
-Bass.mass.tbl[4,1] <- "mass(cg)"
-Bass.mass.tbl[5,1] <- "SexMaleSRXX:mass(cg)"
-Bass.mass.tbl[6,1] <- "SexMaleXY:mass(cg)"
+Bass.mass.tbl[1,1] <- "Intercept (O2_SexFemaleXX)"
+Bass.mass.tbl[2,1] <- "Growth Rate (mass cg/d)"
+Bass.mass.tbl[3,1] <- "O2_SexMaleSRXX"
+Bass.mass.tbl[4,1] <- "O2_SexMaleXY"
+Bass.mass.tbl[5,1] <- "Growth Rate (mass cg/d):O2_SexMaleSRXX"
+Bass.mass.tbl[6,1] <- "Growth Rate (mass cg/d):O2_SexMaleXY"
 Bass.mass.tbl <- Bass.mass.tbl %>% mutate("Species" = "B. duperreyi", "Growth rate" = "mass(cg/d)")
 
 ### 
 # final table
-tables4 <- rbind(Bass.mass.tbl, Bass.svl.tbl) 
+tables4 <- rbind(Bass.svl.tbl, Bass.mass.tbl) 
 TableS4 <- tables4[,c(7,1,2,4,5)]
 Tbl.S4 <- flextable(TableS4) %>% 
   italic(i = 1:12, j = 1, italic = TRUE) %>% 
@@ -385,30 +404,30 @@ knitr::knit_print(Tbl.S4)
 ```
 
 \newpage
-Table S5. BRMS Model coefficients for SVL and mass growth rate estimates across sex class for *Pogona vitticeps*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Animals were remeasured between 3 and 6 months post hatch.
-```{r TableS5, echo=FALSE}
+Table S6. BRMS Model coefficients for SVL and mass growth rate estimates across sex class for *Pogona vitticeps*. Growth rate was calculated by dividing the change in growth (SVL or mass) between the initial measurement and subsequent remeasurement by the total number of days elapsed. Animals were remeasured between 3 and 6 months post hatch.
+```{r TableS6, echo=FALSE}
 ###
 # Pogona growth
 # 1) SVL
-Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.svl.growth.mod")
+Pog.svl.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_svl_metabolism")
 Pog.svl.tbl <- lazerhawk::brms_SummaryTable(Pog.svl.mod)
-Pog.svl.tbl[1,1] <- "Intercept (SexFemaleZW)"
-Pog.svl.tbl[2,1] <- "SexFemaleSRZZ"
-Pog.svl.tbl[3,1] <- "SexMaleZZ"
-Pog.svl.tbl[4,1] <- "SVL(mm)"
-Pog.svl.tbl[5,1] <- "SexFemaleSRZZ:SVL(mm)"
-Pog.svl.tbl[6,1] <- "SexMaleZZ:SVL(mm)"
+Pog.svl.tbl[1,1] <- "Intercept (O2_SexFemaleZW)"
+Pog.svl.tbl[2,1] <- "Growth Rate (SVLmm)"
+Pog.svl.tbl[3,1] <- "O2_SexFemaleSRZZ"
+Pog.svl.tbl[4,1] <- "O2_SexMaleZZ"
+Pog.svl.tbl[5,1] <- "Growth Rate (SVLmm):O2_SexFemaleSRZZ"
+Pog.svl.tbl[6,1] <- "Growth Rate (SVLmm):O2_SexMaleZZ"
 Pog.svl.tbl <- Pog.svl.tbl %>% mutate("Species" = "P. vitticeps", "Growth rate" = "SVL(mm/d)")
 
 # 2) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_metabolism")
+Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_mass_metabolism")
 Pog.mass.tbl <- lazerhawk::brms_SummaryTable(Pog.Mass.mod)
-Pog.mass.tbl[1,1] <- "Intercept (SexFemaleZW)"
-Pog.mass.tbl[2,1] <- "SexFemaleSRZZ"
-Pog.mass.tbl[3,1] <- "SexMaleZZ"
-Pog.mass.tbl[4,1] <- "mass(g)"
-Pog.mass.tbl[5,1] <- "SexFemaleSRZZ:mass(g)"
-Pog.mass.tbl[6,1] <- "SexMaleZZ:mass(g)"
+Pog.mass.tbl[1,1] <- "Intercept (O2_SexFemaleZW)"
+Pog.mass.tbl[2,1] <- "Growth Rate (mass g/d)"
+Pog.mass.tbl[3,1] <- "O2_SexFemaleSRZZ"
+Pog.mass.tbl[4,1] <- "O2_SexMaleZZ"
+Pog.mass.tbl[5,1] <- "Growth Rate (mass g/d):O2_SexFemaleSRZZ"
+Pog.mass.tbl[6,1] <- "Growth Rate (mass g/d):O2_SexMaleZZ"
 Pog.mass.tbl <- Pog.mass.tbl %>% mutate("Species" = "P. vitticeps", "Growth rate" = "mass(g/d)")
 
 ### 
@@ -425,42 +444,6 @@ Tbl.s5 <- flextable(Tables5) %>%
   fix_border_issues() %>% 
   fontsize(i = NULL, j = NULL, size = 10, part = "body")
 knitr::knit_print(Tbl.s5)
-``` 
-
-\newpage
-Table S6. BRMS Model coefficients testing for the relationship between mean metabolic rate and mass growth rate estimates across sex class for *Bassiana duperryii* and *Pogona vitticeps*. Mass growth rate for *B. duperryii* is expressed in cg/d and mass growth rate for *P. vitticeps* is expressed in g/d.
-```{r TableS6, echo=FALSE}
-###
-# Pogona growth and matabolism
-# 1) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_metabolism")
-Pog.mass.tbl <- lazerhawk::brms_SummaryTable(Pog.Mass.mod)
-Pog.mass.tbl[2,1] <- "log(mean_O2)"
-Pog.mass.tbl <- Pog.mass.tbl %>% mutate("Species" = "P. vitticeps") %>% dplyr::select(-c("Est.Error"))
-
-# bassiana growth and metabolism
-#2) MASS
-Bass.Mass.mod <- readRDS(file = "~/Dropbox/energy_sex_reversal/models/Bass_growth_metabolism")
-Bass.mass.tbl <- lazerhawk::brms_SummaryTable(Bass.Mass.mod)
-Bass.mass.tbl[2,1] <- "log(mean_O2)"
-Bass.mass.tbl <- Bass.mass.tbl %>% mutate("Species" = "B. duperryii") %>% dplyr::select(-c("Est.Error"))
-
-
-### 
-# final table
-tables6 <- rbind(Bass.mass.tbl, Pog.mass.tbl)
-Tables6 <- tables6[,c(5,1,2,3,4)]
-Tbl.s6 <- flextable(Tables6) %>% 
-  italic(i = 1:8, j = 1, italic = TRUE) %>% 
-  merge_v(j = c("Species")) %>%  
-  hline(i=c(4), j = 1:4, part="body") %>% 
-  autofit(part = "all") %>% 
-  align(align ="center", part = "all") %>% 
-  font(part = "all", fontname = "Times New Roman") %>% 
-  fix_border_issues() %>% 
-  fontsize(i = NULL, j = NULL, size = 10, part = "body")
-knitr::knit_print(Tbl.s6)
-
 ``` 
 
 \newpage
