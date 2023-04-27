@@ -403,7 +403,7 @@ Bass.Pheno.SVL.post[1,1] = "MaleSR XX-Male XY"
 Bass.Geno.SVL <- XXm.SVL.Growth.posterior - XXf.SVL.Growth.posterior
 Bass.Geno.SVL.post <- describe_posterior(Bass.Geno.SVL, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pmcmc value <0.47
+# "pmcmc value 0.47
 Bass.Geno.SVL.post.pmcmc  <- pmcmc(Bass.Geno.SVL)
 Bass.Geno.SVL.post$"pMCMC Value" = "0.47"
 Bass.Geno.SVL.post[1,1] = "MaleSR XX-Female XX"
@@ -492,26 +492,26 @@ Pog.Geno.SVL.post[1,1] = "FemaleSRZZ-Male ZZ"
 Pog.SVL.df <- rbind(Pog.Pheno.SVL.post, Pog.Geno.SVL.post) %>% mutate(Test = "SVL (mm/d)")
 
 # 2) MASS
-Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog.Mass.growth.mod")
+Pog.Mass.mod <- readRDS(file ="~/Dropbox/energy_sex_reversal/models/Pog_growth_mass_metabolism")
 post_Pog_Massgrowth <- posterior_samples(Pog.Mass.mod, pars = "^b")
-ZWf.Mass.Growth.posterior <- as.array( post_Pog_Massgrowth[,"b_Mass.1.g"])
-ZZf.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZf:Mass.1.g"]) # sex reversed
-ZZm.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_sexZZm:Mass.1.g"])
+ZWf.Mass.Growth.posterior <- as.array( post_Pog_Massgrowth[,"b_Growth.rate.mass."])
+ZZf.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_Growth.rate.mass.:sexZZf"]) # sex reversed
+ZZm.Mass.Growth.posterior <- as.array(ZWf.Mass.Growth.posterior +  post_Pog_Massgrowth[,"b_Growth.rate.mass.:sexZZm"])
 # H1: Like Phenotype Hypothesis
 Pog.Pheno.Mass <- ZZf.Mass.Growth.posterior - ZWf.Mass.Growth.posterior 
 Pog.Pheno.Mass.post <- describe_posterior(Pog.Pheno.Mass, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "pMCMC Value" 0.40
+# "pMCMC Value" 0.61
 Pog.Pheno.Mass.post.pmcmc <- pmcmc(Pog.Pheno.Mass)
-Pog.Pheno.Mass.post$"pMCMC Value" = "0.40"
+Pog.Pheno.Mass.post$"pMCMC Value" = "0.61"
 Pog.Pheno.Mass.post[1,1] = "FemaleSR ZZ-Female ZW"
 # H2: Like Genotype Hypothesis
 Pog.Geno.Mass <- ZZf.Mass.Growth.posterior - ZZm.Mass.Growth.posterior
 Pog.Geno.Mass.post <- describe_posterior(Pog.Geno.Mass, estimate = "median",
                                                    ci = .95, ci_method = "hdi")
-# "p value" = 0.05
+# "p value" = 0.25
 Pog.Geno.Mass.post.pmcmc <- pmcmc(Pog.Geno.Mass)
-Pog.Geno.Mass.post$"pMCMC Value" = "0.06"
+Pog.Geno.Mass.post$"pMCMC Value" = "0.25"
 Pog.Geno.Mass.post[1,1] = "FemaleSR ZZ-Female ZW"
 # final Mass df
 Pog.Mass.df <- rbind(Pog.Pheno.Mass.post, Pog.Geno.Mass.post) %>% mutate(Test = "Mass (g/d)")
